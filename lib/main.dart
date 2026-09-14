@@ -99,8 +99,9 @@ class AdminLocalStorage {
 // ============================================================================
 // API SERVICE
 // ============================================================================
-
 class AdminApiService {
+  
+  // 1. Keep this exactly as it was so existing API calls don't break
   static Future<Map<String, String>> _authHeader() async {
     final token = await AdminLocalStorage.getToken();
     if (token.isNotEmpty) {
@@ -117,6 +118,19 @@ class AdminApiService {
     return await _authHeader();
   }
 
+  // 2. ADD THIS NEW METHOD right here to handle 401 globally
+  static Future<void> handleUnauthorized(BuildContext? context) async {
+    await AdminLocalStorage.clear();
+    if (context != null && Navigator.canPop(context)) {
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+  }
+
+  // 3. The rest of your API methods continue exactly as they were below...
   static Future<Map<String, dynamic>> login(String email, String password) async {
     print('🔐 Attempting login for: $email');
     final response = await http.post(
