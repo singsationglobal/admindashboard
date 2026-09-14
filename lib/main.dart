@@ -14,7 +14,6 @@ import 'package:file_picker/file_picker.dart';
 // ============================================================================
 // API CONFIGURATION
 // ============================================================================
-
 class ApiConfig {
   static String get baseUrl {
     // FOR RENDER DEPLOYMENT - USE YOUR LIVE API URL
@@ -30,10 +29,10 @@ class ApiConfig {
     'Accept': 'application/json',
   };
 }
+
 // ============================================================================
 // LOCAL STORAGE
 // ============================================================================
-
 class AdminLocalStorage {
   static Future<SharedPreferences> _getPrefs() async {
     return await SharedPreferences.getInstance();
@@ -100,7 +99,6 @@ class AdminLocalStorage {
 // API SERVICE
 // ============================================================================
 class AdminApiService {
-  
   // 1. Keep this exactly as it was so existing API calls don't break
   static Future<Map<String, String>> _authHeader() async {
     final token = await AdminLocalStorage.getToken();
@@ -118,7 +116,7 @@ class AdminApiService {
     return await _authHeader();
   }
 
-  // 2. ADD THIS NEW METHOD right here to handle 401 globally
+  // 2. NEW METHOD: Handle 401 globally
   static Future<void> handleUnauthorized(BuildContext? context) async {
     await AdminLocalStorage.clear();
     if (context != null && Navigator.canPop(context)) {
@@ -539,8 +537,7 @@ class AdminApiService {
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       return {
-        'imageUrl': data['imageUrl'] ?? 
-          'https://objectstorage.af-johannesburg-1.oraclecloud.com/n/axcbefxpjvzm/b/karaokeimages/o/Splashscreensplash.jpg',
+        'imageUrl': data['imageUrl'] ?? 'https://objectstorage.af-johannesburg-1.oraclecloud.com/n/axcbefxpjvzm/b/karaokeimages/o/Splashscreensplash.jpg',
       };
     }
     return {
@@ -564,9 +561,9 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to delete splash screen');
   }
 
-  static Future<Map<String, dynamic>> getDashboardStats() async {
+  // ✅ UPDATED: Added {BuildContext? context} and 401 check
+  static Future<Map<String, dynamic>> getDashboardStats({BuildContext? context}) async {
     print('📊 Fetching dashboard stats...');
-    
     try {
       final headers = await _authHeader();
       print('📡 Request headers: $headers');
@@ -578,6 +575,12 @@ class AdminApiService {
       
       print('📡 Dashboard stats response status: ${response.statusCode}');
       print('📡 Dashboard stats response body: ${response.body}');
+      
+      // 👇 ADD THIS 401 CHECK
+      if (response.statusCode == 401) {
+        await handleUnauthorized(context);
+        throw Exception('Session expired. Please log in again.');
+      }
       
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -627,7 +630,6 @@ class AdminApiService {
 // ============================================================================
 // THEME
 // ============================================================================
-
 class AdminTheme {
   static const Color primary = Color(0xFF8E44AD);
   static const Color secondary = Color(0xFFFDB400);
@@ -642,7 +644,6 @@ class AdminTheme {
 // ============================================================================
 // MAIN APP
 // ============================================================================
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const SingsationAdminApp());
@@ -685,7 +686,6 @@ class _SingsationAdminAppState extends State<SingsationAdminApp> {
         ),
       );
     }
-
     return MaterialApp(
       title: 'Singsation Admin',
       debugShowCheckedModeBanner: false,
@@ -733,7 +733,6 @@ class _SingsationAdminAppState extends State<SingsationAdminApp> {
 // ============================================================================
 // LOGIN SCREEN
 // ============================================================================
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -762,7 +761,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _isLoading = true);
-
     try {
       await AdminApiService.login(_emailController.text.trim(), _passwordController.text.trim());
       if (mounted) {
@@ -805,8 +803,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.admin_panel_settings,
-                        size: 80, color: AdminTheme.secondary),
+                    Icon(Icons.admin_panel_settings, size: 80, color: AdminTheme.secondary),
                     const SizedBox(height: 16),
                     Text(
                       'SINGSATION ADMIN',
@@ -833,11 +830,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         hintText: 'Password',
                         prefixIcon: const Icon(Icons.lock),
                         suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility),
-                          onPressed: () => setState(
-                              () => _obscurePassword = !_obscurePassword),
+                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
                       ),
                     ),
@@ -859,8 +853,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             )
                           : const Text(
                               'LOGIN',
-                              style: TextStyle(
-                                  fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                             ),
                     ),
                   ],
@@ -877,7 +870,6 @@ class _LoginScreenState extends State<LoginScreen> {
 // ============================================================================
 // DASHBOARD SCREEN
 // ============================================================================
-
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
@@ -899,14 +891,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadAdminAndStats() async {
     setState(() => _isLoading = true);
-    
     _admin = await AdminLocalStorage.getAdmin();
     _userRole = await AdminLocalStorage.getRole();
     print('👤 Dashboard admin loaded: ${_admin['name']} ${_admin['surname']}');
     print('👤 User role: $_userRole');
-    
     try {
-      final stats = await AdminApiService.getDashboardStats();
+      // ✅ UPDATED: Pass context here so 401 handling works
+      final stats = await AdminApiService.getDashboardStats(context: context);
       print('📊 Dashboard stats loaded: $stats');
       setState(() {
         _stats = stats;
@@ -1204,7 +1195,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 // ============================================================================
 // SPLASH SCREEN MANAGEMENT SCREEN (FIXED - BETTER TIMING)
 // ============================================================================
-
 class SplashScreenManagementScreen extends StatefulWidget {
   const SplashScreenManagementScreen({super.key});
 
@@ -1255,27 +1245,18 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
         type: FileType.custom,
         allowedExtensions: ['jpg', 'jpeg', 'png', 'gif', 'mp4', 'webm'],
       );
-      
       if (result != null) {
         setState(() => _isUploading = true);
-        
-        // Show uploading indicator
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Uploading splash screen...'), duration: Duration(seconds: 2)),
         );
-        
         final uploadResult = await AdminApiService.uploadSplashScreen(result);
-        
-        // Small delay to ensure database is updated
         await Future.delayed(const Duration(milliseconds: 500));
-        
         setState(() {
           _currentActiveImageUrl = uploadResult['imageUrl'];
           _isUploading = false;
         });
-        
         await _loadAllSplashScreens();
-        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Splash screen uploaded and activated successfully'), backgroundColor: Colors.green),
         );
@@ -1296,25 +1277,19 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
       );
       return;
     }
-    
     setState(() => _isUploading = true);
     try {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Saving splash screen URL...'), duration: Duration(seconds: 1)),
       );
-      
       final result = await AdminApiService.uploadSplashScreen(null, imageUrl: url);
-      
       await Future.delayed(const Duration(milliseconds: 500));
-      
       setState(() {
         _currentActiveImageUrl = result['imageUrl'];
         _isUploading = false;
         _urlController.clear();
       });
-      
       await _loadAllSplashScreens();
-      
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Splash screen URL saved successfully'), backgroundColor: Colors.green),
       );
@@ -1327,11 +1302,9 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
   }
 
   Future<void> _activateSplashScreen(int id, String imageUrl) async {
-    // Show loading indicator
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Activating splash screen...'), duration: Duration(seconds: 1)),
     );
-    
     try {
       final response = await http.post(
         Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id/activate'),
@@ -1341,12 +1314,8 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
         setState(() {
           _currentActiveImageUrl = imageUrl;
         });
-        
-        // Small delay to let backend update
         await Future.delayed(const Duration(milliseconds: 300));
-        
         await _loadAllSplashScreens();
-        
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Splash screen activated successfully'), backgroundColor: Colors.green),
         );
@@ -1374,12 +1343,10 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
         ],
       ),
     );
-    
     if (confirm == true) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Deleting splash screen...'), duration: Duration(seconds: 1)),
       );
-      
       try {
         final response = await http.delete(
           Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id'),
@@ -1486,7 +1453,6 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
               children: [
                 Column(
                   children: [
-                    // Active splash screen preview
                     Container(
                       padding: const EdgeInsets.all(16),
                       margin: const EdgeInsets.all(16),
@@ -1525,8 +1491,7 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
                               child: _currentActiveImageUrl != null && _currentActiveImageUrl!.isNotEmpty
                                   ? ClipRRect(
                                       borderRadius: BorderRadius.circular(11),
-                                      child: _currentActiveImageUrl!.contains('.mp4') || 
-                                             _currentActiveImageUrl!.contains('.webm')
+                                      child: _currentActiveImageUrl!.contains('.mp4') || _currentActiveImageUrl!.contains('.webm')
                                           ? const Center(
                                               child: Text(
                                                 '🎬 Video',
@@ -1566,8 +1531,6 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
                         ],
                       ),
                     ),
-                    
-                    // All splash screens list
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Row(
@@ -1603,7 +1566,6 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
                                 final isActive = screen['active'] == true;
                                 final imageUrl = screen['imageUrl'];
                                 final id = screen['id'];
-                                
                                 return Card(
                                   color: AdminTheme.surface,
                                   margin: const EdgeInsets.only(bottom: 12),
@@ -1675,7 +1637,6 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
                     ),
                   ],
                 ),
-                // Loading overlay
                 if (_isUploading)
                   Container(
                     color: Colors.black54,
@@ -1699,7 +1660,6 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
 // ============================================================================
 // USERS SCREEN
 // ============================================================================
-
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
 
@@ -1962,7 +1922,6 @@ class _UsersScreenState extends State<UsersScreen> {
 // ============================================================================
 // SONGS SCREEN
 // ============================================================================
-
 class SongsScreen extends StatefulWidget {
   const SongsScreen({super.key});
 
@@ -1981,7 +1940,6 @@ class _SongsScreenState extends State<SongsScreen> {
   final _artistController = TextEditingController();
   final _urlController = TextEditingController();
   final _videoController = TextEditingController();
-  
   final ImagePicker _picker = ImagePicker();
   XFile? _selectedAudioFile;
   XFile? _selectedVideoFile;
@@ -2026,7 +1984,6 @@ class _SongsScreenState extends State<SongsScreen> {
         type: FileType.audio,
         allowedExtensions: ['mp3', 'wav', 'm4a', 'aac'],
       );
-      
       if (result != null) {
         final file = XFile(result.files.first.path!);
         setState(() => _selectedAudioFile = file);
@@ -2065,7 +2022,6 @@ class _SongsScreenState extends State<SongsScreen> {
       try {
         final result = await AdminApiService.createSong(songData);
         final songId = result['id'];
-        
         if (_selectedAudioFile != null || _selectedVideoFile != null) {
           setState(() => _isUploadingFiles = true);
           await AdminApiService.uploadSongFiles(
@@ -2075,7 +2031,6 @@ class _SongsScreenState extends State<SongsScreen> {
           );
           setState(() => _isUploadingFiles = false);
         }
-        
         _clearForm();
         _loadSongs();
         Navigator.pop(context);
@@ -2126,9 +2081,7 @@ class _SongsScreenState extends State<SongsScreen> {
                       onPressed: _pickAudioFile,
                       icon: const Icon(Icons.audio_file),
                       label: Text(
-                        _selectedAudioFile != null 
-                            ? '✓ ${_selectedAudioFile!.name}' 
-                            : 'Select Audio',
+                        _selectedAudioFile != null ? '✓ ${_selectedAudioFile!.name}' : 'Select Audio',
                         overflow: TextOverflow.ellipsis,
                       ),
                       style: ElevatedButton.styleFrom(
@@ -2144,9 +2097,7 @@ class _SongsScreenState extends State<SongsScreen> {
                       onPressed: _pickVideoFile,
                       icon: const Icon(Icons.video_file),
                       label: Text(
-                        _selectedVideoFile != null 
-                            ? '✓ ${_selectedVideoFile!.name}' 
-                            : 'Select Video',
+                        _selectedVideoFile != null ? '✓ ${_selectedVideoFile!.name}' : 'Select Video',
                         overflow: TextOverflow.ellipsis,
                       ),
                       style: ElevatedButton.styleFrom(
@@ -2175,41 +2126,41 @@ class _SongsScreenState extends State<SongsScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
           ElevatedButton(
-            onPressed: _isUploadingFiles ? null : () async {
-              if (_formKey.currentState!.validate()) {
-                final songData = {
-                  'title': _titleController.text.trim(),
-                  'artist': _artistController.text.trim(),
-                  'url': _urlController.text.trim(),
-                  'video': _videoController.text.trim(),
-                };
-                try {
-                  await AdminApiService.updateSong(song['id'], songData);
-                  
-                  if (_selectedAudioFile != null || _selectedVideoFile != null) {
-                    setState(() => _isUploadingFiles = true);
-                    await AdminApiService.uploadSongFiles(
-                      song['id'],
-                      audioFile: _selectedAudioFile,
-                      videoFile: _selectedVideoFile,
-                    );
-                    setState(() => _isUploadingFiles = false);
-                  }
-                  
-                  _clearForm();
-                  _loadSongs();
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Song updated successfully')),
-                  );
-                } catch (e) {
-                  setState(() => _isUploadingFiles = false);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to update song: $e')),
-                  );
-                }
-              }
-            },
+            onPressed: _isUploadingFiles
+                ? null
+                : () async {
+                    if (_formKey.currentState!.validate()) {
+                      final songData = {
+                        'title': _titleController.text.trim(),
+                        'artist': _artistController.text.trim(),
+                        'url': _urlController.text.trim(),
+                        'video': _videoController.text.trim(),
+                      };
+                      try {
+                        await AdminApiService.updateSong(song['id'], songData);
+                        if (_selectedAudioFile != null || _selectedVideoFile != null) {
+                          setState(() => _isUploadingFiles = true);
+                          await AdminApiService.uploadSongFiles(
+                            song['id'],
+                            audioFile: _selectedAudioFile,
+                            videoFile: _selectedVideoFile,
+                          );
+                          setState(() => _isUploadingFiles = false);
+                        }
+                        _clearForm();
+                        _loadSongs();
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Song updated successfully')),
+                        );
+                      } catch (e) {
+                        setState(() => _isUploadingFiles = false);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Failed to update song: $e')),
+                        );
+                      }
+                    }
+                  },
             child: _isUploadingFiles
                 ? const SizedBox(
                     height: 20,
@@ -2297,7 +2248,7 @@ class _SongsScreenState extends State<SongsScreen> {
           TextFormField(
             controller: _urlController,
             decoration: const InputDecoration(
-              labelText: 'Audio URL (Fallback)', 
+              labelText: 'Audio URL (Fallback)',
               hintText: 'https://... (kept for backup)',
             ),
           ),
@@ -2305,7 +2256,7 @@ class _SongsScreenState extends State<SongsScreen> {
           TextFormField(
             controller: _videoController,
             decoration: const InputDecoration(
-              labelText: 'Video URL (Fallback)', 
+              labelText: 'Video URL (Fallback)',
               hintText: 'https://... (kept for backup)',
             ),
           ),
@@ -2352,9 +2303,7 @@ class _SongsScreenState extends State<SongsScreen> {
                       onPressed: _pickAudioFile,
                       icon: const Icon(Icons.audio_file),
                       label: Text(
-                        _selectedAudioFile != null 
-                            ? '✓ ${_selectedAudioFile!.name}' 
-                            : 'Select Audio',
+                        _selectedAudioFile != null ? '✓ ${_selectedAudioFile!.name}' : 'Select Audio',
                         overflow: TextOverflow.ellipsis,
                       ),
                       style: ElevatedButton.styleFrom(
@@ -2370,9 +2319,7 @@ class _SongsScreenState extends State<SongsScreen> {
                       onPressed: _pickVideoFile,
                       icon: const Icon(Icons.video_file),
                       label: Text(
-                        _selectedVideoFile != null 
-                            ? '✓ ${_selectedVideoFile!.name}' 
-                            : 'Select Video',
+                        _selectedVideoFile != null ? '✓ ${_selectedVideoFile!.name}' : 'Select Video',
                         overflow: TextOverflow.ellipsis,
                       ),
                       style: ElevatedButton.styleFrom(
@@ -2401,7 +2348,7 @@ class _SongsScreenState extends State<SongsScreen> {
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
           ElevatedButton(
-            onPressed: _isUploadingFiles ? null : _addSong, 
+            onPressed: _isUploadingFiles ? null : _addSong,
             child: _isUploadingFiles
                 ? const SizedBox(
                     height: 20,
@@ -2570,7 +2517,6 @@ class _SongsScreenState extends State<SongsScreen> {
 // ============================================================================
 // WINNERS SCREEN (WITH WORKING DELETE & EDIT)
 // ============================================================================
-
 class WinnersScreen extends StatefulWidget {
   const WinnersScreen({super.key});
 
@@ -2583,7 +2529,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
   bool _isLoading = true;
   String _userRole = '';
   
-  // Form controllers for Add/Edit
   final _formKey = GlobalKey<FormState>();
   String _selectedCategory = 'ADULTS';
   final _winnerNameController = TextEditingController();
@@ -2591,7 +2536,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
   final _winnerAgeController = TextEditingController();
   final _provinceController = TextEditingController();
   final _messageController = TextEditingController();
-  
   int? _editingWinnerId;
 
   @override
@@ -2700,7 +2644,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
       );
       return;
     }
-    
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -2716,7 +2659,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
         ],
       ),
     );
-    
     if (confirm == true) {
       try {
         final response = await http.delete(
@@ -2752,10 +2694,13 @@ class _WinnersScreenState extends State<WinnersScreen> {
         title: const Text('Edit Winner'),
         content: SingleChildScrollView(child: _buildForm()),
         actions: [
-          TextButton(onPressed: () {
-            _clearForm();
-            Navigator.pop(context);
-          }, child: const Text('CANCEL')),
+          TextButton(
+            onPressed: () {
+              _clearForm();
+              Navigator.pop(context);
+            },
+            child: const Text('CANCEL'),
+          ),
           ElevatedButton(onPressed: _updateWinner, child: const Text('UPDATE')),
         ],
       ),
@@ -2843,7 +2788,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
   @override
   Widget build(BuildContext context) {
     final bool canModify = (_userRole == 'SUPER_ADMIN' || _userRole == 'ADMIN');
-    
     return Scaffold(
       appBar: AppBar(
         title: const Text('Winner Management'),
@@ -2892,14 +2836,9 @@ class _WinnersScreenState extends State<WinnersScreen> {
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 12,
-                                    vertical: 4,
-                                  ),
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: winner['category'] == 'CELEBRITY' 
-                                        ? Colors.amber 
-                                        : AdminTheme.primary,
+                                    color: winner['category'] == 'CELEBRITY' ? Colors.amber : AdminTheme.primary,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
                                   child: Text(
@@ -2912,12 +2851,9 @@ class _WinnersScreenState extends State<WinnersScreen> {
                                 ),
                                 const Spacer(),
                                 Text(
-                                  DateFormat('dd MMM yyyy').format(
-                                    DateTime.parse(winner['announcedAt']),
-                                  ),
+                                  DateFormat('dd MMM yyyy').format(DateTime.parse(winner['announcedAt'])),
                                   style: TextStyle(color: Colors.grey[500], fontSize: 12),
                                 ),
-                                // EDIT BUTTON - ONLY for SUPER_ADMIN or ADMIN
                                 if (canModify)
                                   IconButton(
                                     icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
@@ -2926,7 +2862,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
                                     padding: EdgeInsets.zero,
                                     constraints: const BoxConstraints(),
                                   ),
-                                // DELETE BUTTON - ONLY for SUPER_ADMIN or ADMIN
                                 if (canModify)
                                   IconButton(
                                     icon: const Icon(Icons.delete, color: Colors.red, size: 20),
@@ -2975,7 +2910,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
 // ============================================================================
 // COMPLAINTS SCREEN
 // ============================================================================
-
 class ComplaintsScreen extends StatefulWidget {
   const ComplaintsScreen({super.key});
 
@@ -3022,7 +2956,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
   Future<void> _replyToComplaint(Map<String, dynamic> complaint) async {
     final replyController = TextEditingController(text: complaint['adminReply'] ?? '');
     String status = complaint['status'] ?? 'OPEN';
-
+    
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -3064,7 +2998,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
         },
       ),
     );
-
+    
     if (result == true) {
       try {
         await AdminApiService.replyToComplaint(
@@ -3278,7 +3212,6 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
 // ============================================================================
 // PAYMENTS SCREEN
 // ============================================================================
-
 class PaymentsScreen extends StatefulWidget {
   const PaymentsScreen({super.key});
 
@@ -3404,15 +3337,11 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                                   _buildInfoRow('Status', payment['status'] ?? 'UNKNOWN'),
                                   const SizedBox(height: 8),
                                   _buildInfoRow('Payment Date', payment['paymentDate'] != null
-                                      ? DateFormat('dd MMM yyyy HH:mm:ss').format(
-                                          DateTime.parse(payment['paymentDate']),
-                                        )
+                                      ? DateFormat('dd MMM yyyy HH:mm:ss').format(DateTime.parse(payment['paymentDate']))
                                       : 'Unknown'),
                                   const SizedBox(height: 8),
                                   _buildInfoRow('Competition Entry Date', competitionEntry['entryDate'] != null
-                                      ? DateFormat('dd MMM yyyy HH:mm:ss').format(
-                                          DateTime.parse(competitionEntry['entryDate']),
-                                        )
+                                      ? DateFormat('dd MMM yyyy HH:mm:ss').format(DateTime.parse(competitionEntry['entryDate']))
                                       : 'Not entered'),
                                   const SizedBox(height: 8),
                                   _buildInfoRow('Category', competitionEntry['category'] ?? 'N/A'),
@@ -3491,7 +3420,6 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
 // ============================================================================
 // STAFF SCREEN
 // ============================================================================
-
 class StaffScreen extends StatefulWidget {
   const StaffScreen({super.key});
 
@@ -3588,14 +3516,12 @@ class _StaffScreenState extends State<StaffScreen> {
       );
       return;
     }
-    
     if (_currentAdminRole == 'ADMIN' && (staffRole == 'ADMIN' || staffRole == 'SUPER_ADMIN')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Admin cannot delete other Admin accounts')),
       );
       return;
     }
-    
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -3675,11 +3601,11 @@ class _StaffScreenState extends State<StaffScreen> {
                       return role['name'] != 'SUPER_ADMIN';
                     })
                     .map<DropdownMenuItem<String>>((role) {
-                    return DropdownMenuItem(
-                      value: role['name'] ?? 'ADMIN',
-                      child: Text(role['name'] ?? 'ADMIN'),
-                    );
-                  }).toList(),
+                      return DropdownMenuItem(
+                        value: role['name'] ?? 'ADMIN',
+                        child: Text(role['name'] ?? 'ADMIN'),
+                      );
+                    }).toList(),
             onChanged: (value) => setState(() => _selectedRole = value ?? 'ADMIN'),
           ),
         ],
@@ -3749,7 +3675,6 @@ class _StaffScreenState extends State<StaffScreen> {
                     final roleName = role['name'] ?? 'Unknown';
                     final isSuperAdmin = roleName == 'SUPER_ADMIN';
                     final canDelete = _currentAdminRole == 'SUPER_ADMIN' && !isSuperAdmin;
-                    
                     return Card(
                       color: AdminTheme.surface,
                       margin: const EdgeInsets.only(bottom: 12),
@@ -3799,7 +3724,6 @@ class _StaffScreenState extends State<StaffScreen> {
 // ============================================================================
 // USER ACTIVITY LOGS SCREEN (FIXED - Shows user activity from karaoke app)
 // ============================================================================
-
 class UserActivityLogsScreen extends StatefulWidget {
   const UserActivityLogsScreen({super.key});
 
@@ -3999,7 +3923,6 @@ class _UserActivityLogsScreenState extends State<UserActivityLogsScreen> {
                             final log = _filteredLogs[index];
                             final user = log['user'] ?? {};
                             final details = log['details'] ?? {};
-                            
                             return Card(
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                               color: AdminTheme.surface,
@@ -4030,9 +3953,7 @@ class _UserActivityLogsScreenState extends State<UserActivityLogsScreen> {
                                       ),
                                     Text(
                                       log['createdAt'] != null
-                                          ? DateFormat('dd MMM yyyy HH:mm:ss').format(
-                                              DateTime.parse(log['createdAt']),
-                                            )
+                                          ? DateFormat('dd MMM yyyy HH:mm:ss').format(DateTime.parse(log['createdAt']))
                                           : 'Unknown',
                                       style: TextStyle(color: Colors.grey[600], fontSize: 10),
                                     ),
