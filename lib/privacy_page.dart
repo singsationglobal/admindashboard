@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/public_scaffold.dart';
+import 'widgets/public_scaffold.dart';
 
 class PrivacyPolicyPage extends StatelessWidget {
   const PrivacyPolicyPage({super.key});
