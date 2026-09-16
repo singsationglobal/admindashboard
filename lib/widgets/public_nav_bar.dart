@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../pages/home_page.dart';
-import '../pages/about_page.dart';
-import '../pages/contact_page.dart';
-import '../pages/faq_page.dart';
-import '../pages/privacy_page.dart';
+import '../home_page.dart';
+import '../about_page.dart';
+import '../contact_page.dart';
+import '../faq_page.dart';
+import '../privacy_page.dart';
 
 class PublicNavBar extends StatelessWidget {
   final String currentRoute;
