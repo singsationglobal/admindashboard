@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../widgets/public_scaffold.dart';
+import 'widgets/public_scaffold.dart';
 
 class FaqPage extends StatelessWidget {
   const FaqPage({super.key});
