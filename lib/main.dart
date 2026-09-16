@@ -10,21 +10,22 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
-import 'pages/home_page.dart';
+
+// IMPORT YOUR PUBLIC PAGES HERE
+import 'pages/home_page.dart'; 
+// (Add imports for about_page.dart, contact_page.dart, etc., if they are in this file)
 
 // ============================================================================
 // API CONFIGURATION
 // ============================================================================
 class ApiConfig {
   static String get baseUrl {
-    // FOR RENDER DEPLOYMENT - USE YOUR LIVE API URL
     if (kIsWeb) return 'https://sadec-git-683606054192.europe-west1.run.app/api';
     if (Platform.isWindows) return 'https://sadec-git-683606054192.europe-west1.run.app/api';
     if (Platform.isAndroid) return 'https://sadec-git-683606054192.europe-west1.run.app/api';
     if (Platform.isIOS) return 'https://sadec-git-683606054192.europe-west1.run.app/api';
     return 'https://sadec-git-683606054192.europe-west1.run.app/api';
   }
-
   static const Map<String, String> headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -38,26 +39,22 @@ class AdminLocalStorage {
   static Future<SharedPreferences> _getPrefs() async {
     return await SharedPreferences.getInstance();
   }
-
   static Future<void> saveToken(String token) async {
     final prefs = await _getPrefs();
     await prefs.setString('admin_token', token);
     print('✅ Token saved: ${token.substring(0, 20)}...');
   }
-
   static Future<String> getToken() async {
     final prefs = await _getPrefs();
     final token = prefs.getString('admin_token') ?? '';
     print('🔑 Token retrieved: ${token.isNotEmpty ? token.substring(0, 20) + "..." : "EMPTY"}');
     return token;
   }
-
   static Future<void> saveAdmin(Map<String, dynamic> admin) async {
     final prefs = await _getPrefs();
     await prefs.setString('admin_data', json.encode(admin));
     print('✅ Admin data saved: ${admin['email']}');
   }
-
   static Future<Map<String, dynamic>> getAdmin() async {
     final prefs = await _getPrefs();
     final data = prefs.getString('admin_data');
@@ -71,17 +68,14 @@ class AdminLocalStorage {
     }
     return {};
   }
-
   static Future<void> saveRole(String role) async {
     final prefs = await _getPrefs();
     await prefs.setString('admin_role', role);
   }
-
   static Future<String> getRole() async {
     final prefs = await _getPrefs();
     return prefs.getString('admin_role') ?? 'SUPPORT';
   }
-
   static Future<void> clear() async {
     final prefs = await _getPrefs();
     await prefs.remove('admin_token');
@@ -89,7 +83,6 @@ class AdminLocalStorage {
     await prefs.remove('admin_role');
     print('🧹 Admin storage cleared');
   }
-
   static Future<bool> isLoggedIn() async {
     final token = await getToken();
     return token.isNotEmpty;
@@ -100,7 +93,6 @@ class AdminLocalStorage {
 // API SERVICE
 // ============================================================================
 class AdminApiService {
-  // 1. Keep this exactly as it was so existing API calls don't break
   static Future<Map<String, String>> _authHeader() async {
     final token = await AdminLocalStorage.getToken();
     if (token.isNotEmpty) {
@@ -112,12 +104,9 @@ class AdminApiService {
     print('⚠️ No token found - request will be unauthorized');
     return ApiConfig.headers;
   }
-
   static Future<Map<String, String>> getAuthHeader() async {
     return await _authHeader();
   }
-
-  // 2. NEW METHOD: Handle 401 globally
   static Future<void> handleUnauthorized(BuildContext? context) async {
     await AdminLocalStorage.clear();
     if (context != null && Navigator.canPop(context)) {
@@ -128,8 +117,6 @@ class AdminApiService {
       );
     }
   }
-
-  // 3. The rest of your API methods continue exactly as they were below...
   static Future<Map<String, dynamic>> login(String email, String password) async {
     print('🔐 Attempting login for: $email');
     final response = await http.post(
@@ -137,9 +124,7 @@ class AdminApiService {
       headers: ApiConfig.headers,
       body: json.encode({'email': email, 'password': password}),
     );
-
     print('📡 Login response status: ${response.statusCode}');
-    
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       await AdminLocalStorage.saveToken(data['token']);
@@ -153,7 +138,6 @@ class AdminApiService {
       throw Exception(error['error'] ?? 'Login failed');
     }
   }
-
   static Future<Map<String, dynamic>> getUsers(int page, int size) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/users?page=$page&size=$size'),
@@ -164,7 +148,6 @@ class AdminApiService {
     }
     throw Exception('Failed to load users: ${response.statusCode}');
   }
-
   static Future<Map<String, dynamic>> checkUserIdExists(String userId) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/users/check-userid?userid=$userId'),
@@ -175,7 +158,6 @@ class AdminApiService {
     }
     return {'exists': false};
   }
-
   static Future<void> banUser(int userId) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId/ban'),
@@ -183,7 +165,6 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to ban user');
   }
-
   static Future<void> unbanUser(int userId) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId/unban'),
@@ -191,7 +172,6 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to unban user');
   }
-
   static Future<void> deleteUser(int userId) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId'),
@@ -199,7 +179,6 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to delete user');
   }
-
   static Future<Map<String, dynamic>> getSongs(int page, int size) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs?page=$page&size=$size'),
@@ -210,7 +189,6 @@ class AdminApiService {
     }
     throw Exception('Failed to load songs: ${response.statusCode}');
   }
-
   static Future<Map<String, dynamic>> createSong(Map<String, dynamic> songData) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs'),
@@ -222,7 +200,6 @@ class AdminApiService {
     }
     throw Exception('Failed to create song');
   }
-
   static Future<Map<String, dynamic>> updateSong(int songId, Map<String, dynamic> songData) async {
     final response = await http.put(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId'),
@@ -234,7 +211,6 @@ class AdminApiService {
     }
     throw Exception('Failed to update song');
   }
-
   static Future<void> hideSong(int songId) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/hide'),
@@ -242,7 +218,6 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to hide song');
   }
-
   static Future<void> unhideSong(int songId) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/unhide'),
@@ -250,7 +225,6 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to unhide song');
   }
-
   static Future<void> deleteSong(int songId) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId'),
@@ -258,11 +232,9 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to delete song');
   }
-
   static Future<Map<String, dynamic>> uploadSongFiles(int songId, {XFile? audioFile, XFile? videoFile}) async {
     var request = http.MultipartRequest('POST', Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/upload-files'));
     request.headers.addAll(await _authHeader());
-    
     if (audioFile != null) {
       if (kIsWeb) {
         final bytes = await audioFile.readAsBytes();
@@ -280,7 +252,6 @@ class AdminApiService {
         ));
       }
     }
-    
     if (videoFile != null) {
       if (kIsWeb) {
         final bytes = await videoFile.readAsBytes();
@@ -298,16 +269,13 @@ class AdminApiService {
         ));
       }
     }
-    
     final response = await request.send();
     final responseBody = await response.stream.bytesToString();
-    
     if (response.statusCode == 200) {
       return json.decode(responseBody);
     }
     throw Exception('Failed to upload song files');
   }
-
   static Future<Map<String, dynamic>> announceWinner(Map<String, dynamic> winnerData) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/winners/announce'),
@@ -319,7 +287,6 @@ class AdminApiService {
     }
     throw Exception('Failed to announce winner');
   }
-
   static Future<List<dynamic>> getActiveWinners() async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/winners/active'),
@@ -330,7 +297,6 @@ class AdminApiService {
     }
     return [];
   }
-
   static Future<Map<String, dynamic>> getComplaints(int page, int size, {String? status}) async {
     String url = '${ApiConfig.baseUrl}/admin/complaints?page=$page&size=$size';
     if (status != null && status.isNotEmpty) {
@@ -345,7 +311,6 @@ class AdminApiService {
     }
     throw Exception('Failed to load complaints');
   }
-
   static Future<Map<String, dynamic>> getComplaintById(int complaintId) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId'),
@@ -356,7 +321,6 @@ class AdminApiService {
     }
     throw Exception('Failed to load complaint');
   }
-
   static Future<Map<String, dynamic>> replyToComplaint(int complaintId, String adminReply, String status) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/reply'),
@@ -368,7 +332,6 @@ class AdminApiService {
     }
     throw Exception('Failed to reply to complaint');
   }
-
   static Future<Map<String, dynamic>> getPayments(int page, int size) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/payments?page=$page&size=$size'),
@@ -379,7 +342,6 @@ class AdminApiService {
     }
     throw Exception('Failed to load payments');
   }
-
   static Future<List<dynamic>> getStaff() async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/staff'),
@@ -390,7 +352,6 @@ class AdminApiService {
     }
     throw Exception('Failed to load staff');
   }
-
   static Future<Map<String, dynamic>> createStaff(Map<String, dynamic> staffData, String roleName, String rawPassword) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/staff?roleName=$roleName&rawPassword=$rawPassword'),
@@ -402,7 +363,6 @@ class AdminApiService {
     }
     throw Exception('Failed to create staff');
   }
-
   static Future<void> deleteStaff(int staffId) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/admin/staff/$staffId'),
@@ -410,7 +370,6 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to delete staff');
   }
-
   static Future<List<dynamic>> getRoles() async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/staff/roles'),
@@ -421,8 +380,6 @@ class AdminApiService {
     }
     return [];
   }
-
-  // FIXED: Get USER activity logs (not admin logs)
   static Future<Map<String, dynamic>> getUserActivityLogs(int page, int size) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/logs/user-activity?page=$page&size=$size'),
@@ -433,8 +390,6 @@ class AdminApiService {
     }
     throw Exception('Failed to load user activity logs');
   }
-
-  // Keep admin logs for reference (if needed)
   static Future<Map<String, dynamic>> getLogs(int adminId, int page, int size) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/logs/admin/$adminId?page=$page&size=$size'),
@@ -445,7 +400,6 @@ class AdminApiService {
     }
     throw Exception('Failed to load logs');
   }
-
   static Future<List<dynamic>> getAllSplashScreens() async {
     try {
       final response = await http.get(
@@ -461,7 +415,6 @@ class AdminApiService {
       return [];
     }
   }
-
   static Future<Map<String, dynamic>> activateSplashScreen(int id) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id/activate'),
@@ -472,7 +425,6 @@ class AdminApiService {
     }
     throw Exception('Failed to activate splash screen');
   }
-
   static Future<Map<String, dynamic>> uploadSplashScreen(FilePickerResult? result, {String? imageUrl}) async {
     if (imageUrl != null && imageUrl.isNotEmpty) {
       final response = await http.post(
@@ -485,18 +437,14 @@ class AdminApiService {
       }
       throw Exception('Failed to save splash screen URL');
     }
-    
     if (result == null || result.files.isEmpty) {
       throw Exception('No file selected');
     }
-    
     var request = http.MultipartRequest('POST', Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/upload'));
     request.headers.addAll(await _authHeader());
-    
     final file = result.files.first;
     final bytes = file.bytes;
     final filename = file.name;
-    
     if (bytes != null) {
       String mimeType = _getMimeType(filename);
       request.files.add(http.MultipartFile.fromBytes(
@@ -511,16 +459,13 @@ class AdminApiService {
         file.path!,
       ));
     }
-    
     final response = await request.send();
     final responseBody = await response.stream.bytesToString();
-    
     if (response.statusCode == 200) {
       return json.decode(responseBody);
     }
     throw Exception('Failed to upload splash screen');
   }
-
   static String _getMimeType(String filename) {
     if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) return 'image/jpeg';
     if (filename.endsWith('.png')) return 'image/png';
@@ -529,7 +474,6 @@ class AdminApiService {
     if (filename.endsWith('.webm')) return 'video/webm';
     return 'image/jpeg';
   }
-
   static Future<Map<String, dynamic>> getSplashScreen() async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen'),
@@ -545,7 +489,6 @@ class AdminApiService {
       'imageUrl': 'https://objectstorage.af-johannesburg-1.oraclecloud.com/n/axcbefxpjvzm/b/karaokeimages/o/Splashscreensplash.jpg',
     };
   }
-
   static Future<void> deleteSplashScreenById(int id) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id'),
@@ -553,7 +496,6 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to delete splash screen');
   }
-
   static Future<void> deleteSplashScreen() async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen'),
@@ -561,28 +503,21 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to delete splash screen');
   }
-
-  // ✅ UPDATED: Added {BuildContext? context} and 401 check
   static Future<Map<String, dynamic>> getDashboardStats({BuildContext? context}) async {
     print('📊 Fetching dashboard stats...');
     try {
       final headers = await _authHeader();
       print('📡 Request headers: $headers');
-      
       final response = await http.get(
         Uri.parse('${ApiConfig.baseUrl}/admin/dashboard/stats'),
         headers: headers,
       );
-      
       print('📡 Dashboard stats response status: ${response.statusCode}');
       print('📡 Dashboard stats response body: ${response.body}');
-      
-      // 👇 ADD THIS 401 CHECK
       if (response.statusCode == 401) {
         await handleUnauthorized(context);
         throw Exception('Session expired. Please log in again.');
       }
-      
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         print('✅ Dashboard stats from dedicated endpoint: $data');
@@ -594,21 +529,17 @@ class AdminApiService {
       print('❌ Dedicated endpoint error: $e');
       print('Stack trace: $stackTrace');
     }
-    
     print('🔄 Falling back to individual count endpoints...');
     try {
       final users = await getUsers(0, 1);
       final songs = await getSongs(0, 1);
       final payments = await getPayments(0, 1);
       final complaints = await getComplaints(0, 1);
-
       final totalUsers = users['totalElements'] ?? 0;
       final totalSongs = songs['totalElements'] ?? 0;
       final totalPayments = payments['totalElements'] ?? 0;
       final totalComplaints = complaints['totalElements'] ?? 0;
-
       print('📊 Fallback counts - Users: $totalUsers, Songs: $totalSongs, Payments: $totalPayments, Complaints: $totalComplaints');
-
       return {
         'totalUsers': totalUsers,
         'totalSongs': totalSongs,
@@ -687,8 +618,9 @@ class _SingsationAdminAppState extends State<SingsationAdminApp> {
         ),
       );
     }
+
     return MaterialApp(
-      title: 'Singsation Admin',
+      title: 'Singsation',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primaryColor: AdminTheme.primary,
@@ -726,7 +658,9 @@ class _SingsationAdminAppState extends State<SingsationAdminApp> {
           ),
         ),
       ),
-      home: const HomePage(),
+      // THIS IS THE KEY CHANGE: Start with the public HomePage. 
+      // The admin panel remains fully accessible via the hidden footer button.
+      home: const HomePage(), 
     );
   }
 }
@@ -897,7 +831,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     print('👤 Dashboard admin loaded: ${_admin['name']} ${_admin['surname']}');
     print('👤 User role: $_userRole');
     try {
-      // ✅ UPDATED: Pass context here so 401 handling works
       final stats = await AdminApiService.getDashboardStats(context: context);
       print('📊 Dashboard stats loaded: $stats');
       setState(() {
@@ -962,7 +895,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final adminName = '${_admin['name'] ?? ''} ${_admin['surname'] ?? ''}'.trim();
     final displayName = adminName.isNotEmpty ? adminName : 'Admin';
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Welcome, $displayName'),
@@ -1194,7 +1126,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 }
 
 // ============================================================================
-// SPLASH SCREEN MANAGEMENT SCREEN (FIXED - BETTER TIMING)
+// SPLASH SCREEN MANAGEMENT SCREEN
 // ============================================================================
 class SplashScreenManagementScreen extends StatefulWidget {
   const SplashScreenManagementScreen({super.key});
@@ -2054,7 +1986,6 @@ class _SongsScreenState extends State<SongsScreen> {
     _videoController.text = song['video'] ?? '';
     _selectedAudioFile = null;
     _selectedVideoFile = null;
-
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -2516,7 +2447,7 @@ class _SongsScreenState extends State<SongsScreen> {
 }
 
 // ============================================================================
-// WINNERS SCREEN (WITH WORKING DELETE & EDIT)
+// WINNERS SCREEN
 // ============================================================================
 class WinnersScreen extends StatefulWidget {
   const WinnersScreen({super.key});
@@ -2529,7 +2460,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
   List<dynamic> _winners = [];
   bool _isLoading = true;
   String _userRole = '';
-  
   final _formKey = GlobalKey<FormState>();
   String _selectedCategory = 'ADULTS';
   final _winnerNameController = TextEditingController();
@@ -2688,7 +2618,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
     _winnerAgeController.text = (winner['winnerAge'] ?? 0).toString();
     _provinceController.text = winner['province'] ?? '';
     _messageController.text = winner['message'] ?? '';
-    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -2957,7 +2886,6 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
   Future<void> _replyToComplaint(Map<String, dynamic> complaint) async {
     final replyController = TextEditingController(text: complaint['adminReply'] ?? '');
     String status = complaint['status'] ?? 'OPEN';
-    
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -2999,7 +2927,6 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
         },
       ),
     );
-    
     if (result == true) {
       try {
         await AdminApiService.replyToComplaint(
@@ -3723,7 +3650,7 @@ class _StaffScreenState extends State<StaffScreen> {
 }
 
 // ============================================================================
-// USER ACTIVITY LOGS SCREEN (FIXED - Shows user activity from karaoke app)
+// USER ACTIVITY LOGS SCREEN
 // ============================================================================
 class UserActivityLogsScreen extends StatefulWidget {
   const UserActivityLogsScreen({super.key});
