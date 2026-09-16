@@ -12,7 +12,11 @@ import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 
 // IMPORT YOUR PUBLIC PAGES HERE
-import 'pages/home_page.dart'; 
+import 'home_page.dart';
+import 'about_page.dart';
+import 'contact_page.dart';
+import 'faq_page.dart';
+import 'privacy_page.dart'; 
 // (Add imports for about_page.dart, contact_page.dart, etc., if they are in this file)
 
 // ============================================================================
