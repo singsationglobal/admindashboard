@@ -726,7 +726,7 @@ class _SingsationAdminAppState extends State<SingsationAdminApp> {
           ),
         ),
       ),
-      home: _isLoggedIn == true ? const DashboardScreen() : const LoginScreen(),
+      home: const HomePage(),
     );
   }
 }
