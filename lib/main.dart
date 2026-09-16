@@ -24,11 +24,11 @@ import 'privacy_page.dart';
 // ============================================================================
 class ApiConfig {
   static String get baseUrl {
-    if (kIsWeb) return 'https://sadec-git-683606054192.europe-west1.run.app/api';
-    if (Platform.isWindows) return 'https://sadec-git-683606054192.europe-west1.run.app/api';
-    if (Platform.isAndroid) return 'https://sadec-git-683606054192.europe-west1.run.app/api';
-    if (Platform.isIOS) return 'https://sadec-git-683606054192.europe-west1.run.app/api';
-    return 'https://sadec-git-683606054192.europe-west1.run.app/api';
+    if (kIsWeb) return 'https://singsation-api-d5hd.onrender.com/api';
+    if (Platform.isWindows) return 'https://singsation-api-d5hd.onrender.com/api';
+    if (Platform.isAndroid) return 'https://singsation-api-d5hd.onrender.com/api';
+    if (Platform.isIOS) return 'https://singsation-api-d5hd.onrender.com/api';
+    return 'https://singsation-api-d5hd.onrender.com/api';
   }
   static const Map<String, String> headers = {
     'Content-Type': 'application/json',
