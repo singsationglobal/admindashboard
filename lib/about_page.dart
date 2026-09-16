@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../widgets/public_scaffold.dart';
+import 'widgets/public_scaffold.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
