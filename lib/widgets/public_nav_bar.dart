@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../home_page.dart';
 import '../about_page.dart';
-import '../app_download_page.dart';   // ← ADD THIS LINE
+import '../app_download_page.dart';
 import '../contact_page.dart';
 import '../faq_page.dart';
 import '../privacy_page.dart';
@@ -57,6 +57,7 @@ class PublicNavBar extends StatelessWidget {
               children: [
                 _navItem(context, 'HOME', const HomePage(), 'home'),
                 _navItem(context, 'ABOUT', const AboutPage(), 'about'),
+                _navItem(context, 'DOWNLOAD', const AppDownloadPage(), 'download'),
                 _navItem(context, 'CONTACT', const ContactPage(), 'contact'),
                 _navItem(context, 'FAQ', const FaqPage(), 'faq'),
                 _navItem(
@@ -74,6 +75,9 @@ class PublicNavBar extends StatelessWidget {
                     break;
                   case 'about':
                     _go(context, const AboutPage());
+                    break;
+                  case 'download':
+                    _go(context, const AppDownloadPage());
                     break;
                   case 'contact':
                     _go(context, const ContactPage());
@@ -94,6 +98,10 @@ class PublicNavBar extends StatelessWidget {
                     value: 'about',
                     child:
                         Text('ABOUT', style: TextStyle(color: Colors.white))),
+                PopupMenuItem(
+                    value: 'download',
+                    child: Text('DOWNLOAD',
+                        style: TextStyle(color: Colors.white))),
                 PopupMenuItem(
                     value: 'contact',
                     child: Text('CONTACT',
