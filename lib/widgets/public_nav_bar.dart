@@ -40,7 +40,7 @@ class PublicNavBar extends StatelessWidget {
             onTap: () => _go(context, const HomePage()),
             child: Image.network(
               logoUrl,
-              height: 50,
+              height: 32,
               errorBuilder: (_, __, ___) => const Text(
                 'SINGSATION',
                 style: TextStyle(
