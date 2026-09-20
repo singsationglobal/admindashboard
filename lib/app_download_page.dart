@@ -5,11 +5,13 @@ import 'widgets/public_scaffold.dart';
 class AppDownloadPage extends StatelessWidget {
   const AppDownloadPage({super.key});
 
-  // ─── CHANGE THESE TWO URLS LATER WHEN THE APP IS PUBLISHED ───
-  static const String playStoreUrl =
-      'https://play.google.com/store/apps/details?id=com.singsation';
-  static const String appStoreUrl =
-      'https://apps.apple.com/za/app/singsation/id0000000000';
+  // ─── CHANGE THESE URLS LATER WHEN THE APP IS PUBLISHED ───
+  static const String splashImageUrl =
+      'https://storage.googleapis.com/singsationsadec/splashsadec/Singsation-Splash-2026.png';
+
+  // TODO: Replace this with the real APK download URL when available.
+  static const String apkDownloadUrl =
+      'https://storage.googleapis.com/singsationsadec/apkssadec/singsation.apk';
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +39,7 @@ class AppDownloadPage extends StatelessWidget {
             ),
             const SizedBox(height: 40),
 
-            // ─── PHONE MOCKUP PLACEHOLDER ───
+            // ─── PHONE MOCKUP WITH SPLASH IMAGE INSIDE ───
             Container(
               width: 220,
               height: 400,
@@ -49,32 +51,84 @@ class AppDownloadPage extends StatelessWidget {
                   width: 2,
                 ),
               ),
-              child: const Center(
-                child: Icon(
-                  Icons.phone_android,
-                  size: 80,
-                  color: Color(0xFFFDB400),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(26),
+                child: Image.network(
+                  splashImageUrl,
+                  width: 220,
+                  height: 400,
+                  fit: BoxFit.cover,
+                  // While loading, show a spinner.
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return const Center(
+                      child: SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Color(0xFFFDB400),
+                        ),
+                      ),
+                    );
+                  },
+                  // If the image fails, fall back to the phone icon.
+                  errorBuilder: (_, __, ___) => const Center(
+                    child: Icon(
+                      Icons.phone_android,
+                      size: 80,
+                      color: Color(0xFFFDB400),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // ─── DOWNLOAD APK BUTTON (below the phone) ───
+            ElevatedButton.icon(
+              onPressed: () => launchUrl(
+                Uri.parse(apkDownloadUrl),
+                webOnlyWindowName: '_blank',
+              ),
+              icon: const Icon(Icons.download, color: Colors.black),
+              label: const Text(
+                'DOWNLOAD APK',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFDB400),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 18,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(50),
                 ),
               ),
             ),
 
             const SizedBox(height: 40),
 
-            // ─── STORE BUTTONS ───
+            // ─── STORE BUTTONS (Coming soon style) ───
             Wrap(
               spacing: 20,
               runSpacing: 20,
               alignment: WrapAlignment.center,
-              children: [
-                _storeButton(
+              children: const [
+                _ComingSoonStoreButton(
                   icon: Icons.android,
-                  label: 'GET IT ON\nGoogle Play',
-                  url: playStoreUrl,
+                  label: 'Coming soon to\nGoogle Play',
                 ),
-                _storeButton(
+                _ComingSoonStoreButton(
                   icon: Icons.apple,
-                  label: 'Download on the\nApp Store',
-                  url: appStoreUrl,
+                  label: 'Coming soon to\nthe App Store',
                 ),
               ],
             ),
@@ -124,72 +178,51 @@ class AppDownloadPage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 60),
-
-            ElevatedButton.icon(
-              onPressed: () => launchUrl(
-                Uri.parse(playStoreUrl),
-                webOnlyWindowName: '_blank',
-              ),
-              icon: const Icon(Icons.download, color: Colors.black),
-              label: const Text(
-                'DOWNLOAD NOW',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFDB400),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 20,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50),
-                ),
-              ),
-            ),
+            const SizedBox(height: 40),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _storeButton({
-    required IconData icon,
-    required String label,
-    required String url,
-  }) {
-    return InkWell(
-      onTap: () => launchUrl(Uri.parse(url), webOnlyWindowName: '_blank'),
-      child: Container(
-        width: 220,
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.7),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFFDB400), width: 2),
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: const Color(0xFFFDB400), size: 36),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  height: 1.3,
-                ),
+// ─────────────────────────────────────────────────────────────────────────────
+// COMING SOON STORE BUTTON — matches the homepage style
+// ─────────────────────────────────────────────────────────────────────────────
+class _ComingSoonStoreButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _ComingSoonStoreButton({
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 240,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFFDB400), width: 2),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: const Color(0xFFFDB400), size: 36),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
