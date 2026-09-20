@@ -12,8 +12,6 @@ class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   // ─── CORRECT video URL ───
-  // Note: folder is `videossadec` (not `videos`) and host is `storage.googleapis.com`
-  // (not `storage.cloud.google.com`).
   static const String heroVideoUrl =
       'https://storage.googleapis.com/singsationsadec/videossadec/9005827-hd_1920_1080_25fps.mp4';
 
@@ -116,33 +114,6 @@ class HomePage extends StatelessWidget {
                                 label: 'Coming soon to\nthe App Store',
                               ),
                             ],
-                          ),
-
-                          const SizedBox(height: 20),
-
-                          // ─── DISABLED CTA BUTTON ───
-                          ElevatedButton.icon(
-                            onPressed: null, // disabled — coming soon
-                            icon: const Icon(Icons.download,
-                                color: Colors.black54),
-                            label: const Text(
-                              'COMING SOON',
-                              style: TextStyle(
-                                color: Colors.black54,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 16,
-                                letterSpacing: 1.2,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor:
-                                  const Color(0xFFFDB400).withOpacity(0.5),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 32, vertical: 20),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(50),
-                              ),
-                            ),
                           ),
                         ],
                       ),
