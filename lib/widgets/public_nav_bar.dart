@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../home_page.dart';
 import '../about_page.dart';
+import '../app_download_page.dart';   // ← ADD THIS LINE
 import '../contact_page.dart';
 import '../faq_page.dart';
 import '../privacy_page.dart';
