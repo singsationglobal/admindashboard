@@ -14,10 +14,10 @@ import 'package:file_picker/file_picker.dart';
 // IMPORT YOUR PUBLIC PAGES HERE
 import 'home_page.dart';
 import 'about_page.dart';
+import 'app_download_page.dart';
 import 'contact_page.dart';
 import 'faq_page.dart';
-import 'privacy_page.dart'; 
-// (Add imports for about_page.dart, contact_page.dart, etc., if they are in this file)
+import 'privacy_page.dart';
 
 // ============================================================================
 // API CONFIGURATION
@@ -33,6 +33,7 @@ class ApiConfig {
     'Accept': 'application/json',
   };
 }
+
 // ============================================================================
 // LOCAL STORAGE
 // ============================================================================
@@ -659,9 +660,9 @@ class _SingsationAdminAppState extends State<SingsationAdminApp> {
           ),
         ),
       ),
-      // THIS IS THE KEY CHANGE: Start with the public HomePage. 
+      // THIS IS THE KEY CHANGE: Start with the public HomePage.
       // The admin panel remains fully accessible via the hidden footer button.
-      home: const HomePage(), 
+      home: const HomePage(),
     );
   }
 }
