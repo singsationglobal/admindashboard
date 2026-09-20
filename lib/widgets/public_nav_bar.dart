@@ -10,7 +10,9 @@ class PublicNavBar extends StatelessWidget {
   final String currentRoute;
   const PublicNavBar({super.key, required this.currentRoute});
 
-  static const String logoAsset = 'assets/images/logo.png';
+  // ─── NEW: logo now comes from a URL ───
+  static const String logoUrl =
+      'https://storage.cloud.google.com/singsationsadec/logos/Singsation-Logo-2026.png';
 
   void _go(BuildContext context, Widget page) {
     Navigator.pushReplacement(
@@ -33,12 +35,13 @@ class PublicNavBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // LOGO on the LEFT
+          // ─── LOGO on the LEFT ───
           GestureDetector(
             onTap: () => _go(context, const HomePage()),
-            child: Image.asset(
-              logoAsset,
+            child: Image.network(
+              logoUrl,
               height: 50,
+              // If the image fails to load, fall back to text.
               errorBuilder: (_, __, ___) => const Text(
                 'SINGSATION',
                 style: TextStyle(
@@ -48,10 +51,28 @@ class PublicNavBar extends StatelessWidget {
                   letterSpacing: 2,
                 ),
               ),
+              // While loading, show nothing (avoids layout jump).
+              loadingBuilder: (context, child, progress) {
+                if (progress == null) return child;
+                return const SizedBox(
+                  height: 50,
+                  width: 120,
+                  child: Center(
+                    child: SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Color(0xFFFDB400),
+                      ),
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           const Spacer(),
-          // MENU on the RIGHT (white text)
+          // ─── MENU on the RIGHT ───
           if (!isMobile)
             Row(
               children: [
@@ -60,8 +81,7 @@ class PublicNavBar extends StatelessWidget {
                 _navItem(context, 'DOWNLOAD', const AppDownloadPage(), 'download'),
                 _navItem(context, 'CONTACT', const ContactPage(), 'contact'),
                 _navItem(context, 'FAQ', const FaqPage(), 'faq'),
-                _navItem(
-                    context, 'PRIVACY', const PrivacyPolicyPage(), 'privacy'),
+                _navItem(context, 'PRIVACY', const PrivacyPolicyPage(), 'privacy'),
               ],
             )
           else
@@ -96,23 +116,19 @@ class PublicNavBar extends StatelessWidget {
                     child: Text('HOME', style: TextStyle(color: Colors.white))),
                 PopupMenuItem(
                     value: 'about',
-                    child:
-                        Text('ABOUT', style: TextStyle(color: Colors.white))),
+                    child: Text('ABOUT', style: TextStyle(color: Colors.white))),
                 PopupMenuItem(
                     value: 'download',
-                    child: Text('DOWNLOAD',
-                        style: TextStyle(color: Colors.white))),
+                    child: Text('DOWNLOAD', style: TextStyle(color: Colors.white))),
                 PopupMenuItem(
                     value: 'contact',
-                    child: Text('CONTACT',
-                        style: TextStyle(color: Colors.white))),
+                    child: Text('CONTACT', style: TextStyle(color: Colors.white))),
                 PopupMenuItem(
                     value: 'faq',
                     child: Text('FAQ', style: TextStyle(color: Colors.white))),
                 PopupMenuItem(
                     value: 'privacy',
-                    child: Text('PRIVACY',
-                        style: TextStyle(color: Colors.white))),
+                    child: Text('PRIVACY', style: TextStyle(color: Colors.white))),
               ],
             ),
         ],
