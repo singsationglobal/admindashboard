@@ -23,15 +23,16 @@ import 'privacy_page.dart';
 // API CONFIGURATION
 // ============================================================================
 class ApiConfig {
-  static String get baseUrl {
-    static const String baseUrl = 'https://singsation-api-d5hd.onrender.com/api';
-  }
+  /// Single source of truth for the backend base URL.
+  /// Same URL as before on every platform — web, Windows, Android, iOS.
+  static const String baseUrl =
+      'https://singsation-api-d5hd.onrender.com/api';
+
   static const Map<String, String> headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
 }
-
 // ============================================================================
 // LOCAL STORAGE
 // ============================================================================
