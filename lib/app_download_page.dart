@@ -109,7 +109,7 @@ class AppDownloadPage extends StatelessWidget {
                         'Compete against the best voices in the country for life-changing cash prizes.',
                   ),
                   _FeatureRow(
-                    icon: Icons.music_library,
+                    icon: Icons.library_music,
                     title: 'Huge Song Library',
                     description:
                         'Thousands of karaoke tracks — from local favourites to international hits.',
