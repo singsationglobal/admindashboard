@@ -5,9 +5,11 @@ import 'widgets/public_scaffold.dart';
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
-  static const String teamJp = 'assets/images/team_jp.jpg';
-  static const String teamCyprian = 'assets/images/team_cyprian.jpg';
-  static const String teamMarketing = 'assets/images/team_marketing.jpg';
+  // ─── Team image URLs (Google Cloud Storage) ───
+  static const String teamJpUrl =
+      'https://storage.googleapis.com/singsationsadec/coverssadec/Singsation-Covers-2026-JP.png';
+  static const String teamCyprianUrl =
+      'https://storage.googleapis.com/singsationsadec/coverssadec/Singsation-Covers-2026-Cyprian.png';
 
   static const String facebookUrl = 'https://facebook.com/';
   static const String instagramUrl = 'https://instagram.com/';
@@ -58,27 +60,28 @@ class AboutPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 32),
-            Wrap(
+            const Wrap(
               spacing: 32,
               runSpacing: 32,
               alignment: WrapAlignment.center,
-              children: const [
+              children: [
                 _TeamCard(
                   name: 'JP LEGEND',
                   role: 'Founder & CEO',
-                  image: teamJp,
+                  imageUrl: teamJpUrl,
                   bio: 'Singer, songwriter, entrepreneur.',
                 ),
                 _TeamCard(
                   name: 'CYPRIAN HEYDEMAN',
                   role: 'IT Director',
-                  image: teamCyprian,
+                  imageUrl: teamCyprianUrl,
                   bio: 'Technology and platform lead.',
                 ),
+                // Third member: no image, keeps the person icon placeholder.
                 _TeamCard(
                   name: 'TO BE ANNOUNCED',
                   role: 'Marketing Director',
-                  image: teamMarketing,
+                  imageUrl: null,
                   bio: 'Coming soon.',
                 ),
               ],
@@ -119,11 +122,14 @@ class AboutPage extends StatelessWidget {
 }
 
 class _TeamCard extends StatelessWidget {
-  final String name, role, image, bio;
+  final String name, role, bio;
+  /// If null, the person icon placeholder is shown instead of an image.
+  final String? imageUrl;
+
   const _TeamCard({
     required this.name,
     required this.role,
-    required this.image,
+    required this.imageUrl,
     required this.bio,
   });
 
@@ -140,18 +146,44 @@ class _TeamCard extends StatelessWidget {
       child: Column(
         children: [
           ClipOval(
-            child: Image.asset(
-              image,
+            child: SizedBox(
               width: 120,
               height: 120,
-              fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
-                width: 120,
-                height: 120,
-                color: Colors.grey[800],
-                child: const Icon(Icons.person,
-                    size: 60, color: Colors.white24),
-              ),
+              child: imageUrl == null
+                  ? Container(
+                      color: Colors.grey[800],
+                      child: const Icon(Icons.person,
+                          size: 60, color: Colors.white24),
+                    )
+                  : Image.network(
+                      imageUrl!,
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.cover,
+                      // While loading, show nothing (avoids layout jump).
+                      loadingBuilder: (context, child, progress) {
+                        if (progress == null) return child;
+                        return Container(
+                          color: Colors.grey[900],
+                          child: const Center(
+                            child: SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Color(0xFFFDB400),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      // If the image fails, fall back to the person icon.
+                      errorBuilder: (_, __, ___) => Container(
+                        color: Colors.grey[800],
+                        child: const Icon(Icons.person,
+                            size: 60, color: Colors.white24),
+                      ),
+                    ),
             ),
           ),
           const SizedBox(height: 16),
