@@ -8,7 +8,7 @@ class AppDownloadPage extends StatelessWidget {
   static const String splashImageUrl =
       'https://storage.googleapis.com/singsationsadec/splashsadec/Singsation-Splash-2026.png';
 
-  // ─── APK download URL ───
+  // ─── APK download URL (confirmed) ───
   static const String apkDownloadUrl =
       'https://storage.googleapis.com/singsationsadec/apksadec/app-armeabi-v7a-release.apk';
 
@@ -38,7 +38,7 @@ class AppDownloadPage extends StatelessWidget {
             ),
             const SizedBox(height: 40),
 
-            // ─── PHONE MOCKUP WITH SPLASH IMAGE INSIDE ───
+            // ─── PHONE MOCKUP WITH SPLASH IMAGE ───
             Container(
               width: 220,
               height: 400,
@@ -83,7 +83,7 @@ class AppDownloadPage extends StatelessWidget {
 
             const SizedBox(height: 28),
 
-            // ─── DOWNLOAD APK BUTTON (smaller, pill shape) ───
+            // ─── SMALLER DOWNLOAD APK BUTTON ───
             ElevatedButton.icon(
               onPressed: () => launchUrl(
                 Uri.parse(apkDownloadUrl),
@@ -114,7 +114,7 @@ class AppDownloadPage extends StatelessWidget {
 
             const SizedBox(height: 36),
 
-            // ─── STORE BUTTONS (Coming soon style) ───
+            // ─── STORE BUTTONS (Coming soon) ───
             Wrap(
               spacing: 20,
               runSpacing: 20,
