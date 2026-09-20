@@ -5,13 +5,12 @@ import 'widgets/public_scaffold.dart';
 class AppDownloadPage extends StatelessWidget {
   const AppDownloadPage({super.key});
 
-  // ─── CHANGE THESE URLS LATER WHEN THE APP IS PUBLISHED ───
   static const String splashImageUrl =
       'https://storage.googleapis.com/singsationsadec/splashsadec/Singsation-Splash-2026.png';
 
-  // TODO: Replace this with the real APK download URL when available.
+  // ─── APK download URL ───
   static const String apkDownloadUrl =
-      'https://storage.googleapis.com/singsationsadec/apkssadec/singsation.apk';
+      'https://storage.googleapis.com/singsationsadec/apksadec/app-armeabi-v7a-release.apk';
 
   @override
   Widget build(BuildContext context) {
@@ -58,7 +57,6 @@ class AppDownloadPage extends StatelessWidget {
                   width: 220,
                   height: 400,
                   fit: BoxFit.cover,
-                  // While loading, show a spinner.
                   loadingBuilder: (context, child, progress) {
                     if (progress == null) return child;
                     return const Center(
@@ -72,7 +70,6 @@ class AppDownloadPage extends StatelessWidget {
                       ),
                     );
                   },
-                  // If the image fails, fall back to the phone icon.
                   errorBuilder: (_, __, ___) => const Center(
                     child: Icon(
                       Icons.phone_android,
@@ -84,21 +81,21 @@ class AppDownloadPage extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 32),
+            const SizedBox(height: 28),
 
-            // ─── DOWNLOAD APK BUTTON (below the phone) ───
+            // ─── DOWNLOAD APK BUTTON (smaller, pill shape) ───
             ElevatedButton.icon(
               onPressed: () => launchUrl(
                 Uri.parse(apkDownloadUrl),
                 webOnlyWindowName: '_blank',
               ),
-              icon: const Icon(Icons.download, color: Colors.black),
+              icon: const Icon(Icons.download, color: Colors.black, size: 20),
               label: const Text(
                 'DOWNLOAD APK',
                 style: TextStyle(
                   color: Colors.black,
                   fontWeight: FontWeight.bold,
-                  fontSize: 16,
+                  fontSize: 14,
                   letterSpacing: 1.2,
                 ),
               ),
@@ -106,15 +103,16 @@ class AppDownloadPage extends StatelessWidget {
                 backgroundColor: const Color(0xFFFDB400),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 32,
-                  vertical: 18,
+                  vertical: 14,
                 ),
+                minimumSize: const Size(0, 44),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(50),
                 ),
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 36),
 
             // ─── STORE BUTTONS (Coming soon style) ───
             Wrap(
@@ -186,9 +184,6 @@ class AppDownloadPage extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// COMING SOON STORE BUTTON — matches the homepage style
-// ─────────────────────────────────────────────────────────────────────────────
 class _ComingSoonStoreButton extends StatelessWidget {
   final IconData icon;
   final String label;
