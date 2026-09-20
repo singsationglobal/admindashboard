@@ -10,9 +10,9 @@ class PublicNavBar extends StatelessWidget {
   final String currentRoute;
   const PublicNavBar({super.key, required this.currentRoute});
 
-  // ─── NEW: logo now comes from a URL ───
+  // ─── Logo URL (with ?v=2 to bypass stale CORS cache) ───
   static const String logoUrl =
-    'https://storage.googleapis.com/singsationsadec/logossadec/Singsation-Logo-2026.png';
+      'https://storage.googleapis.com/singsationsadec/logossadec/Singsation-Logo-2026.png?v=2';
 
   void _go(BuildContext context, Widget page) {
     Navigator.pushReplacement(
@@ -35,13 +35,12 @@ class PublicNavBar extends StatelessWidget {
       ),
       child: Row(
         children: [
-          // ─── LOGO on the LEFT ───
+          // ─── LOGO ───
           GestureDetector(
             onTap: () => _go(context, const HomePage()),
             child: Image.network(
               logoUrl,
               height: 50,
-              // If the image fails to load, fall back to text.
               errorBuilder: (_, __, ___) => const Text(
                 'SINGSATION',
                 style: TextStyle(
@@ -51,7 +50,6 @@ class PublicNavBar extends StatelessWidget {
                   letterSpacing: 2,
                 ),
               ),
-              // While loading, show nothing (avoids layout jump).
               loadingBuilder: (context, child, progress) {
                 if (progress == null) return child;
                 return const SizedBox(
@@ -72,7 +70,7 @@ class PublicNavBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          // ─── MENU on the RIGHT ───
+          // ─── MENU ───
           if (!isMobile)
             Row(
               children: [
