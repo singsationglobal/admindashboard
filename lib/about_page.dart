@@ -5,11 +5,11 @@ import 'widgets/public_scaffold.dart';
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
-  // ─── Team image URLs (Google Cloud Storage) ───
+  // ─── Team image URLs (with ?v=2 to bypass stale CORS cache) ───
   static const String teamJpUrl =
-      'https://storage.googleapis.com/singsationsadec/coverssadec/Singsation-Covers-2026-JP.png';
+      'https://storage.googleapis.com/singsationsadec/coverssadec/Singsation-Covers-2026-JP.png?v=2';
   static const String teamCyprianUrl =
-      'https://storage.googleapis.com/singsationsadec/coverssadec/Singsation-Covers-2026-Cyprian.png';
+      'https://storage.googleapis.com/singsationsadec/coverssadec/Singsation-Covers-2026-Cyprian.png?v=2';
 
   static const String facebookUrl = 'https://facebook.com/';
   static const String instagramUrl = 'https://instagram.com/';
@@ -77,7 +77,6 @@ class AboutPage extends StatelessWidget {
                   imageUrl: teamCyprianUrl,
                   bio: 'Technology and platform lead.',
                 ),
-                // Third member: no image, keeps the person icon placeholder.
                 _TeamCard(
                   name: 'TO BE ANNOUNCED',
                   role: 'Marketing Director',
@@ -123,7 +122,6 @@ class AboutPage extends StatelessWidget {
 
 class _TeamCard extends StatelessWidget {
   final String name, role, bio;
-  /// If null, the person icon placeholder is shown instead of an image.
   final String? imageUrl;
 
   const _TeamCard({
@@ -160,7 +158,6 @@ class _TeamCard extends StatelessWidget {
                       width: 120,
                       height: 120,
                       fit: BoxFit.cover,
-                      // While loading, show nothing (avoids layout jump).
                       loadingBuilder: (context, child, progress) {
                         if (progress == null) return child;
                         return Container(
@@ -177,7 +174,6 @@ class _TeamCard extends StatelessWidget {
                           ),
                         );
                       },
-                      // If the image fails, fall back to the person icon.
                       errorBuilder: (_, __, ___) => Container(
                         color: Colors.grey[800],
                         child: const Icon(Icons.person,
