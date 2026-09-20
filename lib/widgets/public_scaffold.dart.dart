@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'widgets/public_scaffold.dart.dart';   // ✅ matches the actual file
 import 'public_nav_bar.dart';
 import 'public_footer.dart';
 
