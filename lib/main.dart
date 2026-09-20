@@ -24,11 +24,7 @@ import 'privacy_page.dart';
 // ============================================================================
 class ApiConfig {
   static String get baseUrl {
-    if (kIsWeb) return 'https://singsation-api-d5hd.onrender.com/api';
-    if (Platform.isWindows) return 'https://singsation-api-d5hd.onrender.com/api';
-    if (Platform.isAndroid) return 'https://singsation-api-d5hd.onrender.com/api';
-    if (Platform.isIOS) return 'https://singsation-api-d5hd.onrender.com/api';
-    return 'https://singsation-api-d5hd.onrender.com/api';
+    static const String baseUrl = 'https://singsation-api-d5hd.onrender.com/api';
   }
   static const Map<String, String> headers = {
     'Content-Type': 'application/json',
