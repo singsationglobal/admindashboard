@@ -12,7 +12,7 @@ class PublicNavBar extends StatelessWidget {
 
   // ─── NEW: logo now comes from a URL ───
   static const String logoUrl =
-      'https://storage.cloud.google.com/singsationsadec/logos/Singsation-Logo-2026.png';
+    'https://storage.googleapis.com/singsationsadec/logossadec/Singsation-Logo-2026.png';
 
   void _go(BuildContext context, Widget page) {
     Navigator.pushReplacement(
