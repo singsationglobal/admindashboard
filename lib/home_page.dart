@@ -11,10 +11,13 @@ import 'widgets/public_scaffold.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
+  // ─── CORRECT video URL ───
+  // Note: folder is `videossadec` (not `videos`) and host is `storage.googleapis.com`
+  // (not `storage.cloud.google.com`).
   static const String heroVideoUrl =
-      'https://storage.cloud.google.com/singsationsadec/videos/9005827-hd_1920_1080_25fps.mp4';
-  static const String heroPosterUrl =
-      'assets/images/ceo_video_thumb.jpg';
+      'https://storage.googleapis.com/singsationsadec/videossadec/9005827-hd_1920_1080_25fps.mp4';
+
+  static const String heroPosterUrl = 'assets/images/ceo_video_thumb.jpg';
   static const String playStoreUrl =
       'https://play.google.com/store/apps/details?id=com.singsation';
   static const String appStoreUrl =
@@ -92,8 +95,8 @@ class HomePage extends StatelessWidget {
                           const SizedBox(height: 20),
                           const Text(
                             'The Biggest Karaoke Competition in South Africa',
-                            style: TextStyle(
-                                color: Colors.white70, fontSize: 16),
+                            style:
+                                TextStyle(color: Colors.white70, fontSize: 16),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 40),
@@ -154,8 +157,7 @@ class HomePage extends StatelessWidget {
           // BODY BELOW THE HERO — the mission statement
           // ─────────────────────────────────────────────
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 60),
             child: Container(
               constraints: const BoxConstraints(maxWidth: 780),
               child: const Text(
@@ -163,8 +165,8 @@ class HomePage extends StatelessWidget {
                 'a chance for singers across the country to showcase their '
                 'talent, compete for life-changing prizes, and be discovered. '
                 'Join the movement.',
-                style: TextStyle(
-                    color: Colors.white70, fontSize: 16, height: 1.6),
+                style:
+                    TextStyle(color: Colors.white70, fontSize: 16, height: 1.6),
                 textAlign: TextAlign.center,
               ),
             ),
