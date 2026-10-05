@@ -13,6 +13,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
   final _password = TextEditingController();
   bool _loading = false;
   bool _obscure = true;
+  bool _rememberMe = false; // Added for Remember Me functionality
 
   @override
   void dispose() {
@@ -68,34 +69,68 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
               ),
             ),
             const SizedBox(height: 24),
-            TextField(
-              controller: _email,
-              style: const TextStyle(color: Colors.white),
-              decoration: const InputDecoration(
-                hintText: 'Email',
-                hintStyle: TextStyle(color: Colors.white54),
-                prefixIcon: Icon(Icons.email, color: Colors.white54),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _password,
-              obscureText: _obscure,
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Password',
-                hintStyle: const TextStyle(color: Colors.white54),
-                prefixIcon: const Icon(Icons.key, color: Colors.white54),
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscure ? Icons.visibility_off : Icons.visibility,
-                    color: Colors.white54,
+            
+            // FIX 1: AutofillGroup triggers browser/PC password managers to save credentials
+            AutofillGroup(
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _email,
+                    autofillHints: const [AutofillHints.username],
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      hintText: 'Email',
+                      hintStyle: TextStyle(color: Colors.white54),
+                      prefixIcon: Icon(Icons.email, color: Colors.white54),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
                   ),
-                  onPressed: () => setState(() => _obscure = !_obscure),
-                ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _password,
+                    autofillHints: const [AutofillHints.password],
+                    obscureText: _obscure,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Password',
+                      hintStyle: const TextStyle(color: Colors.white54),
+                      prefixIcon: const Icon(Icons.key, color: Colors.white54),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscure ? Icons.visibility_off : Icons.visibility,
+                          color: Colors.white54,
+                        ),
+                        onPressed: () => setState(() => _obscure = !_obscure),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
+            
+            const SizedBox(height: 12),
+            
+            // FIX 2: Remember Me Checkbox
+            Row(
+              children: [
+                Checkbox(
+                  value: _rememberMe,
+                  activeColor: const Color(0xFFFDB400),
+                  checkColor: Colors.black,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      _rememberMe = value ?? false;
+                    });
+                  },
+                ),
+                const Text(
+                  'Remember Me',
+                  style: TextStyle(color: Colors.white, fontSize: 14),
+                ),
+              ],
+            ),
+            
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
