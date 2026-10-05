@@ -68,23 +68,30 @@ class _ContactPageState extends State<ContactPage> {
   Widget build(BuildContext context) {
     return PublicScaffold(
       route: 'contact',
-      child: Padding(
+      // FIX 1: SingleChildScrollView prevents the form from being cut off on mobile, 
+      // especially when the keyboard pops up.
+      child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
         child: Column(
           children: [
-            const Text(
-              'CONTACT US',
-              style: TextStyle(
-                color: Color(0xFFFDB400),
-                fontSize: 56,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3,
+            // FIX 2: FittedBox ensures the large title scales down safely on mobile without cutting off
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: const Text(
+                'CONTACT US',
+                style: TextStyle(
+                  color: Color(0xFFFDB400),
+                  fontSize: 56,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 3,
+                ),
               ),
             ),
             const SizedBox(height: 20),
             const Text(
               'We\'d love to hear from you.',
               style: TextStyle(color: Colors.white70, fontSize: 16),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
             Container(
@@ -93,8 +100,7 @@ class _ContactPageState extends State<ContactPage> {
                 children: [
                   _field(_name, 'Your Name'),
                   const SizedBox(height: 12),
-                  _field(_email, 'Your Email',
-                      keyboard: TextInputType.emailAddress),
+                  _field(_email, 'Your Email', keyboard: TextInputType.emailAddress),
                   const SizedBox(height: 12),
                   _field(_subject, 'Subject'),
                   const SizedBox(height: 12),
@@ -109,7 +115,8 @@ class _ContactPageState extends State<ContactPage> {
                         foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 18),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                       child: _sending
                           ? const SizedBox(
@@ -136,7 +143,9 @@ class _ContactPageState extends State<ContactPage> {
             const Text(
               'Or email us directly at info@sing-sation.com',
               style: TextStyle(color: Colors.white54, fontSize: 14),
+              textAlign: TextAlign.center,
             ),
+            const SizedBox(height: 20), // Extra padding at the bottom for safe scrolling
           ],
         ),
       ),
@@ -159,8 +168,7 @@ class _ContactPageState extends State<ContactPage> {
           borderRadius: BorderRadius.circular(10),
           borderSide: BorderSide.none,
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
