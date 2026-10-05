@@ -20,17 +20,22 @@ class AboutPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return PublicScaffold(
       route: 'about',
-      child: Padding(
+      // FIX: SingleChildScrollView ensures the whole page scrolls safely on small phones
+      child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
         child: Column(
           children: [
-            const Text(
-              'ABOUT US',
-              style: TextStyle(
-                color: Color(0xFFFDB400),
-                fontSize: 56,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3,
+            // FIX: FittedBox prevents large titles from cutting off on mobile
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: const Text(
+                'ABOUT US',
+                style: TextStyle(
+                  color: Color(0xFFFDB400),
+                  fontSize: 56,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 3,
+                ),
               ),
             ),
             const SizedBox(height: 24),
@@ -45,18 +50,22 @@ class AboutPage extends StatelessWidget {
                 'Our mission is to bring karaoke culture to every corner of '
                 'South Africa and to create opportunities for aspiring '
                 'singers to rise.',
-                style: TextStyle(
-                    color: Colors.white70, fontSize: 16, height: 1.7),
+                style: TextStyle(color: Colors.white70, fontSize: 16, height: 1.7),
+                textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 60),
-            const Text(
-              'THE TEAM',
-              style: TextStyle(
-                color: Color(0xFFFDB400),
-                fontSize: 40,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3,
+            
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: const Text(
+                'THE TEAM',
+                style: TextStyle(
+                  color: Color(0xFFFDB400),
+                  fontSize: 40,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 3,
+                ),
               ),
             ),
             const SizedBox(height: 32),
@@ -86,13 +95,17 @@ class AboutPage extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 60),
-            const Text(
-              'FOLLOW US',
-              style: TextStyle(
-                color: Color(0xFFFDB400),
-                fontSize: 32,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3,
+            
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: const Text(
+                'FOLLOW US',
+                style: TextStyle(
+                  color: Color(0xFFFDB400),
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 3,
+                ),
               ),
             ),
             const SizedBox(height: 20),
@@ -108,6 +121,7 @@ class AboutPage extends StatelessWidget {
                 _social(Icons.play_circle_fill, youtubeUrl),
               ],
             ),
+            const SizedBox(height: 40), // Extra bottom padding for safe scrolling
           ],
         ),
       ),
@@ -150,8 +164,7 @@ class _TeamCard extends StatelessWidget {
               child: imageUrl == null
                   ? Container(
                       color: Colors.grey[800],
-                      child: const Icon(Icons.person,
-                          size: 60, color: Colors.white24),
+                      child: const Icon(Icons.person, size: 60, color: Colors.white24),
                     )
                   : Image.network(
                       imageUrl!,
@@ -176,8 +189,7 @@ class _TeamCard extends StatelessWidget {
                       },
                       errorBuilder: (_, __, ___) => Container(
                         color: Colors.grey[800],
-                        child: const Icon(Icons.person,
-                            size: 60, color: Colors.white24),
+                        child: const Icon(Icons.person, size: 60, color: Colors.white24),
                       ),
                     ),
             ),
