@@ -43,23 +43,29 @@ class FaqPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return PublicScaffold(
       route: 'faq',
-      child: Padding(
+      // FIX 1: SingleChildScrollView ensures the page scrolls safely on small phones
+      child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
         child: Column(
           children: [
-            const Text(
-              'FAQ',
-              style: TextStyle(
-                color: Color(0xFFFDB400),
-                fontSize: 56,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3,
+            // FIX 2: FittedBox prevents the large "FAQ" title from cutting off on mobile
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: const Text(
+                'FAQ',
+                style: TextStyle(
+                  color: Color(0xFFFDB400),
+                  fontSize: 56,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 3,
+                ),
               ),
             ),
             const SizedBox(height: 20),
             const Text(
               'Frequently Asked Questions',
               style: TextStyle(color: Colors.white54, fontSize: 16),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
             Container(
@@ -73,8 +79,7 @@ class FaqPage extends StatelessWidget {
                           color: const Color(0xFF1A1A1A).withOpacity(0.9),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color:
-                                  const Color(0xFFFDB400).withOpacity(0.3)),
+                              color: const Color(0xFFFDB400).withOpacity(0.3)),
                         ),
                         child: ExpansionTile(
                           iconColor: const Color(0xFFFDB400),
@@ -89,8 +94,7 @@ class FaqPage extends StatelessWidget {
                           ),
                           children: [
                             Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                  16, 0, 16, 16),
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                               child: Text(
                                 f[1],
                                 style: const TextStyle(
@@ -106,6 +110,7 @@ class FaqPage extends StatelessWidget {
                     .toList(),
               ),
             ),
+            const SizedBox(height: 40), // Extra bottom padding for safe scrolling
           ],
         ),
       ),
