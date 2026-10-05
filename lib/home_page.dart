@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:url_launcher/url_launcher.dart';
 
 // Web-only import for the video element.
 // On non-web platforms, this import is a no-op.
 import 'hero_video_web.dart' if (dart.library.io) 'hero_video_stub.dart';
 
 import 'widgets/public_scaffold.dart';
+// IMPORTANT: Make sure to import your AppDownloadPage file here. 
+// Example: import 'app_download_page.dart'; 
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -16,10 +17,6 @@ class HomePage extends StatelessWidget {
       'https://storage.googleapis.com/singsationsadec/videossadec/9005827-hd_1920_1080_25fps.mp4';
 
   static const String heroPosterUrl = 'assets/images/ceo_video_thumb.jpg';
-  static const String playStoreUrl =
-      'https://play.google.com/store/apps/details?id=com.singsation';
-  static const String appStoreUrl =
-      'https://apps.apple.com/za/app/singsation/id0000000000';
 
   @override
   Widget build(BuildContext context) {
@@ -70,16 +67,23 @@ class HomePage extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'SINGSATION',
-                            style: TextStyle(
-                              color: Color(0xFFFDB400),
-                              fontSize: 72,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: 3,
+                          
+                          // FIX: FittedBox prevents "SINGSATION" from cutting off on mobile phones.
+                          // It keeps the desktop look intact but scales down safely on small screens.
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: const Text(
+                              'SINGSATION',
+                              style: TextStyle(
+                                color: Color(0xFFFDB400),
+                                fontSize: 72,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 3,
+                              ),
+                              textAlign: TextAlign.center,
                             ),
-                            textAlign: TextAlign.center,
                           ),
+                          
                           const SizedBox(height: 4),
                           const Text(
                             'SOUTH AFRICA',
@@ -93,25 +97,37 @@ class HomePage extends StatelessWidget {
                           const SizedBox(height: 20),
                           const Text(
                             'The Biggest Karaoke Competition in South Africa',
-                            style:
-                                TextStyle(color: Colors.white70, fontSize: 16),
+                            style: TextStyle(color: Colors.white70, fontSize: 16),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 40),
 
-                          // ─── STORE BUTTONS ROW ───
+                          // ─── DOWNLOAD BUTTONS ROW ───
+                          // FIX: Kept the two buttons, changed text to "Download App", 
+                          // and made them navigate to the Download Screen.
                           Wrap(
                             spacing: 20,
                             runSpacing: 20,
                             alignment: WrapAlignment.center,
-                            children: const [
-                              _ComingSoonStoreButton(
+                            children: [
+                              _DownloadAppButton(
                                 icon: Icons.android,
-                                label: 'Coming soon to\nGoogle Play',
+                                label: 'Download App',
+                                onTap: () {
+                                  // Navigate to the Download App screen
+                                  // If you use named routes, change this to: Navigator.pushNamed(context, '/download');
+                                  // Otherwise, import AppDownloadPage and use:
+                                  // Navigator.push(context, MaterialPageRoute(builder: (context) => const AppDownloadPage()));
+                                  Navigator.pushNamed(context, 'download'); 
+                                },
                               ),
-                              _ComingSoonStoreButton(
+                              _DownloadAppButton(
                                 icon: Icons.apple,
-                                label: 'Coming soon to\nthe App Store',
+                                label: 'Download App',
+                                onTap: () {
+                                  // Navigate to the Download App screen
+                                  Navigator.pushNamed(context, 'download');
+                                },
                               ),
                             ],
                           ),
@@ -136,8 +152,7 @@ class HomePage extends StatelessWidget {
                 'a chance for singers across the country to showcase their '
                 'talent, compete for life-changing prizes, and be discovered. '
                 'Join the movement.',
-                style:
-                    TextStyle(color: Colors.white70, fontSize: 16, height: 1.6),
+                style: TextStyle(color: Colors.white70, fontSize: 16, height: 1.6),
                 textAlign: TextAlign.center,
               ),
             ),
@@ -149,43 +164,50 @@ class HomePage extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// STORE BUTTON — shows a store icon + "Coming soon" label
-// Visually matches the store buttons on the App Download page.
+// DOWNLOAD APP BUTTON — Navigates to the download screen, mobile-friendly
 // ─────────────────────────────────────────────────────────────────────────────
-class _ComingSoonStoreButton extends StatelessWidget {
+class _DownloadAppButton extends StatelessWidget {
   final IconData icon;
   final String label;
-  const _ComingSoonStoreButton({
+  final VoidCallback onTap;
+
+  const _DownloadAppButton({
     required this.icon,
     required this.label,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 240,
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.7),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFFDB400), width: 2),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: const Color(0xFFFDB400), size: 36),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                height: 1.3,
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        width: 240,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.7),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: const Color(0xFFFDB400), width: 2),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: const Color(0xFFFDB400), size: 36),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16, // Increased for better mobile readability
+                  fontWeight: FontWeight.w600,
+                  height: 1.3,
+                ),
+                textAlign: TextAlign.center,
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
