@@ -55,19 +55,24 @@ We may update this Privacy Policy from time to time. The latest version will alw
   Widget build(BuildContext context) {
     return PublicScaffold(
       route: 'privacy',
-      child: Padding(
+      // FIX 1: SingleChildScrollView ensures the long policy text scrolls safely on small phones
+      child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
         child: Column(
           children: [
-            const Text(
-              'PRIVACY POLICY',
-              style: TextStyle(
-                color: Color(0xFFFDB400),
-                fontSize: 56,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3,
+            // FIX 2: FittedBox prevents the large "PRIVACY POLICY" title from cutting off on mobile
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: const Text(
+                'PRIVACY POLICY',
+                style: TextStyle(
+                  color: Color(0xFFFDB400),
+                  fontSize: 56,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 3,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 40),
             Container(
@@ -76,15 +81,14 @@ We may update this Privacy Policy from time to time. The latest version will alw
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A).withOpacity(0.9),
                 borderRadius: BorderRadius.circular(12),
-                border:
-                    Border.all(color: const Color(0xFFFDB400).withOpacity(0.3)),
+                border: Border.all(color: const Color(0xFFFDB400).withOpacity(0.3)),
               ),
               child: const Text(
                 _policy,
-                style: TextStyle(
-                    color: Colors.white70, fontSize: 14, height: 1.7),
+                style: TextStyle(color: Colors.white70, fontSize: 14, height: 1.7),
               ),
             ),
+            const SizedBox(height: 40), // Extra bottom padding for safe scrolling
           ],
         ),
       ),
