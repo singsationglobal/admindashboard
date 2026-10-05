@@ -16,168 +16,175 @@ class AppDownloadPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return PublicScaffold(
       route: 'download',
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-        child: Column(
-          children: [
-            const Text(
-              'DOWNLOAD THE APP',
-              style: TextStyle(
-                color: Color(0xFFFDB400),
-                fontSize: 56,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 3,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              'Get Singsation on your phone and start competing today.',
-              style: TextStyle(color: Colors.white70, fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 40),
-
-            // ─── PHONE MOCKUP WITH SPLASH IMAGE ───
-            Container(
-              width: 220,
-              height: 400,
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A1A).withOpacity(0.9),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: const Color(0xFFFDB400).withOpacity(0.4),
-                  width: 2,
+      // FIX: SingleChildScrollView ensures the whole page scrolls safely on small phones without cutting off the bottom
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+          child: Column(
+            children: [
+              // FIX: FittedBox ensures the large title scales down safely on mobile without cutting off
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: const Text(
+                  'DOWNLOAD THE APP',
+                  style: TextStyle(
+                    color: Color(0xFFFDB400),
+                    fontSize: 56,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 3,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
               ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(26),
-                child: Image.network(
-                  splashImageUrl,
-                  width: 220,
-                  height: 400,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const Center(
-                      child: SizedBox(
-                        height: 24,
-                        width: 24,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFFFDB400),
+              const SizedBox(height: 20),
+              const Text(
+                'Get Singsation on your phone and start competing today.',
+                style: TextStyle(color: Colors.white70, fontSize: 16),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 40),
+
+              // ─── PHONE MOCKUP WITH SPLASH IMAGE ───
+              Container(
+                width: 220,
+                height: 400,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A1A).withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: const Color(0xFFFDB400).withOpacity(0.4),
+                    width: 2,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(26),
+                  child: Image.network(
+                    splashImageUrl,
+                    width: 220,
+                    height: 400,
+                    fit: BoxFit.cover,
+                    loadingBuilder: (context, child, progress) {
+                      if (progress == null) return child;
+                      return const Center(
+                        child: SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFFFDB400),
+                          ),
                         ),
+                      );
+                    },
+                    errorBuilder: (_, __, ___) => const Center(
+                      child: Icon(
+                        Icons.phone_android,
+                        size: 80,
+                        color: Color(0xFFFDB400),
                       ),
-                    );
-                  },
-                  errorBuilder: (_, __, ___) => const Center(
-                    child: Icon(
-                      Icons.phone_android,
-                      size: 80,
-                      color: Color(0xFFFDB400),
                     ),
                   ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 28),
+              const SizedBox(height: 28),
 
-            // ─── SMALLER DOWNLOAD APK BUTTON ───
-            ElevatedButton.icon(
-              onPressed: () => launchUrl(
-                Uri.parse(apkDownloadUrl),
-                webOnlyWindowName: '_blank',
+              // ─── DOWNLOAD APK BUTTON ───
+              ElevatedButton.icon(
+                onPressed: () => launchUrl(
+                  Uri.parse(apkDownloadUrl),
+                  webOnlyWindowName: '_blank',
+                ),
+                icon: const Icon(Icons.download, color: Colors.black, size: 20),
+                label: const Text(
+                  'DOWNLOAD APK',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFDB400),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 32,
+                    vertical: 14,
+                  ),
+                  minimumSize: const Size(0, 44),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(50),
+                  ),
+                ),
               ),
-              icon: const Icon(Icons.download, color: Colors.black, size: 20),
-              label: const Text(
-                'DOWNLOAD APK',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFDB400),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 32,
-                  vertical: 14,
-                ),
-                minimumSize: const Size(0, 44),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(50),
-                ),
-              ),
-            ),
 
-            const SizedBox(height: 36),
+              const SizedBox(height: 36),
 
-            // ─── STORE BUTTONS (Coming soon) ───
-            Wrap(
-              spacing: 20,
-              runSpacing: 20,
-              alignment: WrapAlignment.center,
-              children: const [
-                _ComingSoonStoreButton(
-                  icon: Icons.android,
-                  label: 'Coming soon to\nGoogle Play',
-                ),
-                _ComingSoonStoreButton(
-                  icon: Icons.apple,
-                  label: 'Coming soon to\nthe App Store',
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 60),
-
-            // ─── WHY DOWNLOAD ───
-            Container(
-              constraints: const BoxConstraints(maxWidth: 780),
-              child: const Column(
-                children: [
-                  Text(
-                    'WHY DOWNLOAD?',
-                    style: TextStyle(
-                      color: Color(0xFFFDB400),
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 2,
-                    ),
+              // ─── STORE BUTTONS (Coming soon) ───
+              Wrap(
+                spacing: 20,
+                runSpacing: 20,
+                alignment: WrapAlignment.center,
+                children: const [
+                  _ComingSoonStoreButton(
+                    icon: Icons.android,
+                    label: 'Coming soon to\nGoogle Play',
                   ),
-                  SizedBox(height: 24),
-                  _FeatureRow(
-                    icon: Icons.mic,
-                    title: 'Sing & Compete',
-                    description:
-                        'Record your karaoke performance and enter the competition from anywhere in South Africa.',
-                  ),
-                  _FeatureRow(
-                    icon: Icons.emoji_events,
-                    title: 'Win Cash Prizes',
-                    description:
-                        'Compete against the best voices in the country for life-changing cash prizes.',
-                  ),
-                  _FeatureRow(
-                    icon: Icons.library_music,
-                    title: 'Huge Song Library',
-                    description:
-                        'Thousands of karaoke tracks — from local favourites to international hits.',
-                  ),
-                  _FeatureRow(
-                    icon: Icons.people,
-                    title: 'Join the Community',
-                    description:
-                        'Connect with singers from every province and be discovered by industry scouts.',
+                  _ComingSoonStoreButton(
+                    icon: Icons.apple,
+                    label: 'Coming soon to\nthe App Store',
                   ),
                 ],
               ),
-            ),
 
-            const SizedBox(height: 40),
-          ],
+              const SizedBox(height: 60),
+
+              // ─── WHY DOWNLOAD ───
+              Container(
+                constraints: const BoxConstraints(maxWidth: 780),
+                child: const Column(
+                  children: [
+                    Text(
+                      'WHY DOWNLOAD?',
+                      style: TextStyle(
+                        color: Color(0xFFFDB400),
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    SizedBox(height: 24),
+                    _FeatureRow(
+                      icon: Icons.mic,
+                      title: 'Sing & Compete',
+                      description:
+                          'Record your karaoke performance and enter the competition from anywhere in South Africa.',
+                    ),
+                    _FeatureRow(
+                      icon: Icons.emoji_events,
+                      title: 'Win Cash Prizes',
+                      description:
+                          'Compete against the best voices in the country for life-changing cash prizes.',
+                    ),
+                    _FeatureRow(
+                      icon: Icons.library_music,
+                      title: 'Huge Song Library',
+                      description:
+                          'Thousands of karaoke tracks — from local favourites to international hits.',
+                    ),
+                    _FeatureRow(
+                      icon: Icons.people,
+                      title: 'Join the Community',
+                      description:
+                          'Connect with singers from every province and be discovered by industry scouts.',
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
     );
