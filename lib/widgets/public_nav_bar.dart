@@ -76,7 +76,8 @@ class PublicNavBar extends StatelessWidget {
               children: [
                 _navItem(context, 'HOME', const HomePage(), 'home'),
                 _navItem(context, 'ABOUT', const AboutPage(), 'about'),
-                _navItem(context, 'DOWNLOAD', const AppDownloadPage(), 'download'),
+                // FIX 1: Changed 'DOWNLOAD' to 'DOWNLOAD APP' for desktop menu
+                _navItem(context, 'DOWNLOAD APP', const AppDownloadPage(), 'download'),
                 _navItem(context, 'CONTACT', const ContactPage(), 'contact'),
                 _navItem(context, 'FAQ', const FaqPage(), 'faq'),
                 _navItem(context, 'PRIVACY', const PrivacyPolicyPage(), 'privacy'),
@@ -115,9 +116,10 @@ class PublicNavBar extends StatelessWidget {
                 PopupMenuItem(
                     value: 'about',
                     child: Text('ABOUT', style: TextStyle(color: Colors.white))),
+                // FIX 2: Changed 'DOWNLOAD' to 'DOWNLOAD APP' for mobile popup menu
                 PopupMenuItem(
                     value: 'download',
-                    child: Text('DOWNLOAD', style: TextStyle(color: Colors.white))),
+                    child: Text('DOWNLOAD APP', style: TextStyle(color: Colors.white))),
                 PopupMenuItem(
                     value: 'contact',
                     child: Text('CONTACT', style: TextStyle(color: Colors.white))),
