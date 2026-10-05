@@ -5,8 +5,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'hero_video_web.dart' if (dart.library.io) 'hero_video_stub.dart';
 
 import 'widgets/public_scaffold.dart';
-// IMPORTANT: Ensure your AppDownloadPage is imported here if not using named routes.
-// Example: import 'app_download_page.dart';
+// FIX 1: Import the download page so we can navigate to it directly
+import 'app_download_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -92,8 +92,11 @@ class HomePage extends StatelessWidget {
                           // 1. EXTRA BUTTON: Takes them to the Download App screen
                           ElevatedButton.icon(
                             onPressed: () {
-                              // Navigates to the download screen
-                              Navigator.pushNamed(context, 'download');
+                              // FIX 2: Uses the exact same safe navigation pattern as your PublicNavBar
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(builder: (_) => const AppDownloadPage()),
+                              );
                             },
                             icon: const Icon(Icons.download, color: Colors.black, size: 20),
                             label: const Text(
