@@ -682,6 +682,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
+  bool _rememberMe = false; // Added for Remember Me checkbox
 
   Future<void> _login() async {
     if (_emailController.text.trim().isEmpty) {
@@ -711,7 +712,7 @@ class _LoginScreenState extends State<LoginScreen> {
         SnackBar(content: Text('Login failed: $e')),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -740,7 +741,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.admin_panel_settings, size: 80, color: AdminTheme.secondary),
+                    const Icon(Icons.admin_panel_settings, size: 80, color: AdminTheme.secondary),
                     const SizedBox(height: 16),
                     Text(
                       'SINGSATION ADMIN',
@@ -751,27 +752,68 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    TextField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        hintText: 'Email Address',
-                        prefixIcon: Icon(Icons.email),
+                    
+                    // FIX 1 & 2: AutofillGroup triggers browser password managers.
+                    // TextStyle(color: Colors.black) ensures typed text is visible on the white background.
+                    AutofillGroup(
+                      child: Column(
+                        children: [
+                          TextField(
+                            controller: _emailController,
+                            autofillHints: const [AutofillHints.username],
+                            style: const TextStyle(color: Colors.black),
+                            decoration: const InputDecoration(
+                              hintText: 'Email Address',
+                              hintStyle: TextStyle(color: Colors.black54),
+                              prefixIcon: Icon(Icons.email, color: Colors.black54),
+                            ),
+                            keyboardType: TextInputType.emailAddress,
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            controller: _passwordController,
+                            autofillHints: const [AutofillHints.password],
+                            obscureText: _obscurePassword,
+                            style: const TextStyle(color: Colors.black),
+                            decoration: InputDecoration(
+                              hintText: 'Password',
+                              hintStyle: const TextStyle(color: Colors.black54),
+                              prefixIcon: const Icon(Icons.lock, color: Colors.black54),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                  color: Colors.black54,
+                                ),
+                                onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      keyboardType: TextInputType.emailAddress,
                     ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _passwordController,
-                      obscureText: _obscurePassword,
-                      decoration: InputDecoration(
-                        hintText: 'Password',
-                        prefixIcon: const Icon(Icons.lock),
-                        suffixIcon: IconButton(
-                          icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                    
+                    const SizedBox(height: 8),
+                    
+                    // FIX 3: Remember Me Checkbox
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: _rememberMe,
+                          activeColor: AdminTheme.primary,
+                          checkColor: Colors.white,
+                          onChanged: (bool? value) {
+                            setState(() {
+                              _rememberMe = value ?? false;
+                            });
+                          },
                         ),
-                      ),
+                        const Text(
+                          'Remember Me',
+                          style: TextStyle(color: AdminTheme.textLight, fontSize: 14),
+                        ),
+                      ],
                     ),
+                    
                     const SizedBox(height: 24),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _login,
