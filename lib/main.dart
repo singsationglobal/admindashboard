@@ -106,9 +106,11 @@ class AdminApiService {
     print('⚠️ No token found - request will be unauthorized');
     return ApiConfig.headers;
   }
+
   static Future<Map<String, String>> getAuthHeader() async {
     return await _authHeader();
   }
+
   static Future<void> handleUnauthorized(BuildContext? context) async {
     await AdminLocalStorage.clear();
     if (context != null && Navigator.canPop(context)) {
@@ -119,6 +121,7 @@ class AdminApiService {
       );
     }
   }
+
   static Future<Map<String, dynamic>> login(String email, String password) async {
     print('🔐 Attempting login for: $email');
     final response = await http.post(
@@ -140,6 +143,7 @@ class AdminApiService {
       throw Exception(error['error'] ?? 'Login failed');
     }
   }
+
   static Future<Map<String, dynamic>> getUsers(int page, int size) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/users?page=$page&size=$size'),
@@ -150,6 +154,35 @@ class AdminApiService {
     }
     throw Exception('Failed to load users: ${response.statusCode}');
   }
+
+  // ─── NEW: Search Users Endpoint ───
+  static Future<Map<String, dynamic>> searchUsers(String query, int page, int size) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/admin/users/search?query=${Uri.encodeComponent(query)}&page=$page&size=$size'),
+      headers: await _authHeader(),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('Failed to search users: ${response.statusCode}');
+  }
+
+  // ─── NEW: Send Message to User Endpoint ───
+  static Future<Map<String, dynamic>> sendMessageToUser(int userId, String messageType, String messageContent) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId/message'),
+      headers: await _authHeader(),
+      body: json.encode({
+        'messageType': messageType,
+        'messageContent': messageContent,
+      }),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    }
+    throw Exception('Failed to send message: ${response.statusCode}');
+  }
+
   static Future<Map<String, dynamic>> checkUserIdExists(String userId) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/users/check-userid?userid=$userId'),
@@ -160,6 +193,7 @@ class AdminApiService {
     }
     return {'exists': false};
   }
+
   static Future<void> banUser(int userId) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId/ban'),
@@ -167,6 +201,7 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to ban user');
   }
+
   static Future<void> unbanUser(int userId) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId/unban'),
@@ -174,6 +209,7 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to unban user');
   }
+
   static Future<void> deleteUser(int userId) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId'),
@@ -181,6 +217,7 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to delete user');
   }
+
   static Future<Map<String, dynamic>> getSongs(int page, int size) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs?page=$page&size=$size'),
@@ -191,6 +228,7 @@ class AdminApiService {
     }
     throw Exception('Failed to load songs: ${response.statusCode}');
   }
+
   static Future<Map<String, dynamic>> createSong(Map<String, dynamic> songData) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs'),
@@ -202,6 +240,7 @@ class AdminApiService {
     }
     throw Exception('Failed to create song');
   }
+
   static Future<Map<String, dynamic>> updateSong(int songId, Map<String, dynamic> songData) async {
     final response = await http.put(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId'),
@@ -213,6 +252,7 @@ class AdminApiService {
     }
     throw Exception('Failed to update song');
   }
+
   static Future<void> hideSong(int songId) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/hide'),
@@ -220,6 +260,7 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to hide song');
   }
+
   static Future<void> unhideSong(int songId) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/unhide'),
@@ -227,6 +268,7 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to unhide song');
   }
+
   static Future<void> deleteSong(int songId) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId'),
@@ -234,6 +276,7 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to delete song');
   }
+
   static Future<Map<String, dynamic>> uploadSongFiles(int songId, {XFile? audioFile, XFile? videoFile}) async {
     var request = http.MultipartRequest('POST', Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/upload-files'));
     request.headers.addAll(await _authHeader());
@@ -278,6 +321,7 @@ class AdminApiService {
     }
     throw Exception('Failed to upload song files');
   }
+
   static Future<Map<String, dynamic>> announceWinner(Map<String, dynamic> winnerData) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/winners/announce'),
@@ -289,6 +333,7 @@ class AdminApiService {
     }
     throw Exception('Failed to announce winner');
   }
+
   static Future<List<dynamic>> getActiveWinners() async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/winners/active'),
@@ -299,6 +344,7 @@ class AdminApiService {
     }
     return [];
   }
+
   static Future<Map<String, dynamic>> getComplaints(int page, int size, {String? status}) async {
     String url = '${ApiConfig.baseUrl}/admin/complaints?page=$page&size=$size';
     if (status != null && status.isNotEmpty) {
@@ -313,6 +359,7 @@ class AdminApiService {
     }
     throw Exception('Failed to load complaints');
   }
+
   static Future<Map<String, dynamic>> getComplaintById(int complaintId) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId'),
@@ -323,6 +370,7 @@ class AdminApiService {
     }
     throw Exception('Failed to load complaint');
   }
+
   static Future<Map<String, dynamic>> replyToComplaint(int complaintId, String adminReply, String status) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/reply'),
@@ -334,6 +382,7 @@ class AdminApiService {
     }
     throw Exception('Failed to reply to complaint');
   }
+
   static Future<Map<String, dynamic>> getPayments(int page, int size) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/payments?page=$page&size=$size'),
@@ -344,6 +393,7 @@ class AdminApiService {
     }
     throw Exception('Failed to load payments');
   }
+
   static Future<List<dynamic>> getStaff() async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/staff'),
@@ -354,6 +404,7 @@ class AdminApiService {
     }
     throw Exception('Failed to load staff');
   }
+
   static Future<Map<String, dynamic>> createStaff(Map<String, dynamic> staffData, String roleName, String rawPassword) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/staff?roleName=$roleName&rawPassword=$rawPassword'),
@@ -365,6 +416,7 @@ class AdminApiService {
     }
     throw Exception('Failed to create staff');
   }
+
   static Future<void> deleteStaff(int staffId) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/admin/staff/$staffId'),
@@ -372,6 +424,7 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to delete staff');
   }
+
   static Future<List<dynamic>> getRoles() async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/staff/roles'),
@@ -382,6 +435,7 @@ class AdminApiService {
     }
     return [];
   }
+
   static Future<Map<String, dynamic>> getUserActivityLogs(int page, int size) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/logs/user-activity?page=$page&size=$size'),
@@ -392,6 +446,7 @@ class AdminApiService {
     }
     throw Exception('Failed to load user activity logs');
   }
+
   static Future<Map<String, dynamic>> getLogs(int adminId, int page, int size) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/logs/admin/$adminId?page=$page&size=$size'),
@@ -402,6 +457,7 @@ class AdminApiService {
     }
     throw Exception('Failed to load logs');
   }
+
   static Future<List<dynamic>> getAllSplashScreens() async {
     try {
       final response = await http.get(
@@ -417,6 +473,7 @@ class AdminApiService {
       return [];
     }
   }
+
   static Future<Map<String, dynamic>> activateSplashScreen(int id) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id/activate'),
@@ -427,6 +484,7 @@ class AdminApiService {
     }
     throw Exception('Failed to activate splash screen');
   }
+
   static Future<Map<String, dynamic>> uploadSplashScreen(FilePickerResult? result, {String? imageUrl}) async {
     if (imageUrl != null && imageUrl.isNotEmpty) {
       final response = await http.post(
@@ -468,6 +526,7 @@ class AdminApiService {
     }
     throw Exception('Failed to upload splash screen');
   }
+
   static String _getMimeType(String filename) {
     if (filename.endsWith('.jpg') || filename.endsWith('.jpeg')) return 'image/jpeg';
     if (filename.endsWith('.png')) return 'image/png';
@@ -476,6 +535,7 @@ class AdminApiService {
     if (filename.endsWith('.webm')) return 'video/webm';
     return 'image/jpeg';
   }
+
   static Future<Map<String, dynamic>> getSplashScreen() async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen'),
@@ -491,6 +551,7 @@ class AdminApiService {
       'imageUrl': 'https://objectstorage.af-johannesburg-1.oraclecloud.com/n/axcbefxpjvzm/b/karaokeimages/o/Splashscreensplash.jpg',
     };
   }
+
   static Future<void> deleteSplashScreenById(int id) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id'),
@@ -498,6 +559,7 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to delete splash screen');
   }
+
   static Future<void> deleteSplashScreen() async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen'),
@@ -505,6 +567,7 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to delete splash screen');
   }
+
   static Future<Map<String, dynamic>> getDashboardStats({BuildContext? context}) async {
     print('📊 Fetching dashboard stats...');
     try {
@@ -1667,10 +1730,21 @@ class _UsersScreenState extends State<UsersScreen> {
   int _totalElements = 0;
   bool _isLoading = true;
 
+  // ─── SEARCH FUNCTIONALITY ───
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearching = false;
+
   @override
   void initState() {
     super.initState();
     _loadUsers();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadUsers() async {
@@ -1682,6 +1756,7 @@ class _UsersScreenState extends State<UsersScreen> {
         _totalPages = data['totalPages'];
         _totalElements = data['totalElements'];
         _isLoading = false;
+        _isSearching = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
@@ -1689,6 +1764,39 @@ class _UsersScreenState extends State<UsersScreen> {
         SnackBar(content: Text('Failed to load users: $e')),
       );
     }
+  }
+
+  Future<void> _performSearch() async {
+    if (_searchQuery.trim().isEmpty) {
+      _loadUsers();
+      return;
+    }
+    setState(() {
+      _isLoading = true;
+      _isSearching = true;
+    });
+    try {
+      // Calls the new backend search endpoint
+      final data = await AdminApiService.searchUsers(_searchQuery.trim(), 0, 20);
+      setState(() {
+        _users = data['users'];
+        _totalPages = data['totalPages'];
+        _totalElements = data['totalElements'];
+        _currentPage = 0; // Reset to page 1 on search
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Search failed: $e')),
+      );
+    }
+  }
+
+  Future<void> _clearSearch() async {
+    _searchController.clear();
+    setState(() => _searchQuery = '');
+    _loadUsers();
   }
 
   Future<void> _banUser(int userId, String userName) async {
@@ -1710,7 +1818,7 @@ class _UsersScreenState extends State<UsersScreen> {
     if (confirm == true) {
       try {
         await AdminApiService.banUser(userId);
-        _loadUsers();
+        _isSearching ? _performSearch() : _loadUsers();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('User banned successfully')),
         );
@@ -1741,7 +1849,7 @@ class _UsersScreenState extends State<UsersScreen> {
     if (confirm == true) {
       try {
         await AdminApiService.unbanUser(userId);
-        _loadUsers();
+        _isSearching ? _performSearch() : _loadUsers();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('User unbanned successfully')),
         );
@@ -1772,7 +1880,7 @@ class _UsersScreenState extends State<UsersScreen> {
     if (confirm == true) {
       try {
         await AdminApiService.deleteUser(userId);
-        _loadUsers();
+        _isSearching ? _performSearch() : _loadUsers();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('User deleted successfully')),
         );
@@ -1782,6 +1890,110 @@ class _UsersScreenState extends State<UsersScreen> {
         );
       }
     }
+  }
+
+  // ─── NEW: MESSAGE DIALOG ───
+  Future<void> _showMessageDialog(Map<String, dynamic> user) async {
+    String messageType = 'Winner Announcement';
+    final messageController = TextEditingController();
+    bool isSending = false;
+
+    await showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: AdminTheme.surface,
+            title: const Text('Message User', style: TextStyle(color: AdminTheme.textLight)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'To: ${user['name'] ?? ''} ${user['surname'] ?? ''} (${user['userid'] ?? 'No ID'})',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: messageType,
+                    dropdownColor: AdminTheme.surface,
+                    decoration: const InputDecoration(
+                      labelText: 'Message Type',
+                      labelStyle: TextStyle(color: AdminTheme.textLight),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Winner Announcement', child: Text('Winner Announcement')),
+                      DropdownMenuItem(value: 'General Update', child: Text('General Update')),
+                    ],
+                    onChanged: (value) {
+                      setDialogState(() {
+                        messageType = value ?? 'Winner Announcement';
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: messageController,
+                    maxLines: 4,
+                    style: const TextStyle(color: AdminTheme.textLight),
+                    decoration: const InputDecoration(
+                      labelText: 'Message Content',
+                      labelStyle: TextStyle(color: AdminTheme.textLight),
+                      border: OutlineInputBorder(),
+                      hintText: 'Type your message here...',
+                      hintStyle: TextStyle(color: Colors.white54),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: isSending ? null : () => Navigator.pop(context),
+                child: const Text('CANCEL', style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                onPressed: isSending || messageController.text.trim().isEmpty 
+                    ? null 
+                    : () async {
+                  setDialogState(() => isSending = true);
+                  try {
+                    // Calls the new backend message endpoint
+                    await AdminApiService.sendMessageToUser(
+                      user['id'],
+                      messageType,
+                      messageController.text.trim(),
+                    );
+                    if (mounted) {
+                      Navigator.pop(context);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('$messageType sent to ${user['name']} successfully!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  } catch (e) {
+                    setDialogState(() => isSending = false);
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Failed to send message: $e'), backgroundColor: Colors.red),
+                      );
+                    }
+                  }
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary),
+                child: isSending
+                    ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('SEND'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
   }
 
   @override
@@ -1801,13 +2013,45 @@ class _UsersScreenState extends State<UsersScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                // ─── SEARCH BAR ───
                 Padding(
                   padding: const EdgeInsets.all(16),
+                  child: TextField(
+                    controller: _searchController,
+                    textInputAction: TextInputAction.search,
+                    onSubmitted: (value) {
+                      setState(() => _searchQuery = value);
+                      _performSearch();
+                    },
+                    style: const TextStyle(color: AdminTheme.textLight),
+                    decoration: InputDecoration(
+                      hintText: 'Search by name, surname, ID, email, or contact...',
+                      hintStyle: const TextStyle(color: Colors.white54),
+                      prefixIcon: const Icon(Icons.search, color: Colors.white54),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.white54),
+                              onPressed: _clearSearch,
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: AdminTheme.surface,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Total Users: $_totalElements',
+                        _isSearching 
+                            ? 'Search Results: $_totalElements' 
+                            : 'Total Users: $_totalElements',
                         style: const TextStyle(color: AdminTheme.textLight),
                       ),
                       Text(
@@ -1817,66 +2061,80 @@ class _UsersScreenState extends State<UsersScreen> {
                     ],
                   ),
                 ),
+                const SizedBox(height: 8),
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: _users.length,
-                    itemBuilder: (context, index) {
-                      final user = _users[index];
-                      final isActive = user['isActive'] ?? true;
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        color: AdminTheme.surface,
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: isActive ? Colors.green : Colors.red,
-                            child: Text(
-                              user['name']?.substring(0, 1).toUpperCase() ?? '?',
-                              style: const TextStyle(color: Colors.white),
-                            ),
+                  child: _users.isEmpty
+                      ? const Center(
+                          child: Text(
+                            'No users found.',
+                            style: TextStyle(color: Colors.grey),
                           ),
-                          title: Text(
-                            user['name'] ?? 'Unknown',
-                            style: const TextStyle(color: AdminTheme.textLight),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user['email'] ?? '',
-                                style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                              ),
-                              Text(
-                                'UserID: ${user['userid'] ?? 'N/A'} | Competition: ${user['hasCompletedEntry'] == true ? 'Yes' : 'No'}',
-                                style: TextStyle(color: Colors.grey[500], fontSize: 10),
-                              ),
-                            ],
-                          ),
-                          trailing: Wrap(
-                            spacing: 8,
-                            children: [
-                              if (isActive)
-                                IconButton(
-                                  icon: const Icon(Icons.block, color: Colors.orange),
-                                  onPressed: () => _banUser(user['id'], user['name']),
-                                  tooltip: 'Ban',
+                        )
+                      : ListView.builder(
+                          itemCount: _users.length,
+                          itemBuilder: (context, index) {
+                            final user = _users[index];
+                            final isActive = user['isActive'] ?? true;
+                            return Card(
+                              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                              color: AdminTheme.surface,
+                              child: ListTile(
+                                leading: CircleAvatar(
+                                  backgroundColor: isActive ? Colors.green : Colors.red,
+                                  child: Text(
+                                    (user['name'] ?? '?').substring(0, 1).toUpperCase(),
+                                    style: const TextStyle(color: Colors.white),
+                                  ),
                                 ),
-                              if (!isActive)
-                                IconButton(
-                                  icon: const Icon(Icons.check_circle, color: Colors.green),
-                                  onPressed: () => _unbanUser(user['id'], user['name']),
-                                  tooltip: 'Unban',
+                                title: Text(
+                                  '${user['name'] ?? 'Unknown'} ${user['surname'] ?? ''}',
+                                  style: const TextStyle(color: AdminTheme.textLight),
                                 ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteUser(user['id'], user['name']),
-                                tooltip: 'Delete',
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      user['email'] ?? '',
+                                      style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                    ),
+                                    Text(
+                                      'ID: ${user['userid'] ?? 'N/A'} | Contact: ${user['contact'] ?? 'N/A'}',
+                                      style: const TextStyle(color: Colors.grey, fontSize: 10),
+                                    ),
+                                  ],
+                                ),
+                                trailing: Wrap(
+                                  spacing: 4,
+                                  children: [
+                                    // ─── MESSAGE BUTTON ───
+                                    IconButton(
+                                      icon: const Icon(Icons.message, color: Colors.blue),
+                                      onPressed: () => _showMessageDialog(user),
+                                      tooltip: 'Message User',
+                                    ),
+                                    if (isActive)
+                                      IconButton(
+                                        icon: const Icon(Icons.block, color: Colors.orange),
+                                        onPressed: () => _banUser(user['id'], user['name']),
+                                        tooltip: 'Ban',
+                                      ),
+                                    if (!isActive)
+                                      IconButton(
+                                        icon: const Icon(Icons.check_circle, color: Colors.green),
+                                        onPressed: () => _unbanUser(user['id'], user['name']),
+                                        tooltip: 'Unban',
+                                      ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Colors.red),
+                                      onPressed: () => _deleteUser(user['id'], user['name']),
+                                      tooltip: 'Delete',
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -1888,7 +2146,7 @@ class _UsersScreenState extends State<UsersScreen> {
                           onPressed: () {
                             setState(() {
                               _currentPage--;
-                              _loadUsers();
+                              _isSearching ? _performSearch() : _loadUsers();
                             });
                           },
                           child: const Text('PREVIOUS'),
@@ -1898,7 +2156,7 @@ class _UsersScreenState extends State<UsersScreen> {
                           onPressed: () {
                             setState(() {
                               _currentPage++;
-                              _loadUsers();
+                              _isSearching ? _performSearch() : _loadUsers();
                             });
                           },
                           child: const Text('NEXT'),
