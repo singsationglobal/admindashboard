@@ -1714,7 +1714,7 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
 }
 
 // ============================================================================
-// USERS SCREEN
+// USERS SCREEN (COMPLETE & FIXED)
 // ============================================================================
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -1730,7 +1730,7 @@ class _UsersScreenState extends State<UsersScreen> {
   int _totalElements = 0;
   bool _isLoading = true;
 
-  // ─── SEARCH FUNCTIONALITY ───
+  // Search functionality
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isSearching = false;
@@ -1776,13 +1776,12 @@ class _UsersScreenState extends State<UsersScreen> {
       _isSearching = true;
     });
     try {
-      // Calls the new backend search endpoint
       final data = await AdminApiService.searchUsers(_searchQuery.trim(), 0, 20);
       setState(() {
         _users = data['users'];
         _totalPages = data['totalPages'];
         _totalElements = data['totalElements'];
-        _currentPage = 0; // Reset to page 1 on search
+        _currentPage = 0;
         _isLoading = false;
       });
     } catch (e) {
@@ -1819,13 +1818,9 @@ class _UsersScreenState extends State<UsersScreen> {
       try {
         await AdminApiService.banUser(userId);
         _isSearching ? _performSearch() : _loadUsers();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User banned successfully')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User banned successfully')));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to ban user: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to ban user: $e')));
       }
     }
   }
@@ -1850,13 +1845,9 @@ class _UsersScreenState extends State<UsersScreen> {
       try {
         await AdminApiService.unbanUser(userId);
         _isSearching ? _performSearch() : _loadUsers();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User unbanned successfully')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User unbanned successfully')));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to unban user: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to unban user: $e')));
       }
     }
   }
@@ -1881,18 +1872,14 @@ class _UsersScreenState extends State<UsersScreen> {
       try {
         await AdminApiService.deleteUser(userId);
         _isSearching ? _performSearch() : _loadUsers();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User deleted successfully')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User deleted successfully')));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete user: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete user: $e')));
       }
     }
   }
 
-  // ─── NEW: MESSAGE DIALOG ───
+  // ─── FIXED MESSAGE DIALOG (Will not fall apart) ───
   Future<void> _showMessageDialog(Map<String, dynamic> user) async {
     String messageType = 'Winner Announcement';
     final messageController = TextEditingController();
@@ -1904,49 +1891,71 @@ class _UsersScreenState extends State<UsersScreen> {
         builder: (context, setDialogState) {
           return AlertDialog(
             backgroundColor: AdminTheme.surface,
-            title: const Text('Message User', style: TextStyle(color: AdminTheme.textLight)),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'To: ${user['name'] ?? ''} ${user['surname'] ?? ''} (${user['userid'] ?? 'No ID'})',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButtonFormField<String>(
-                    value: messageType,
-                    dropdownColor: AdminTheme.surface,
-                    decoration: const InputDecoration(
-                      labelText: 'Message Type',
-                      labelStyle: TextStyle(color: AdminTheme.textLight),
-                      border: OutlineInputBorder(),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Text(
+              'Message User',
+              style: TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.bold),
+            ),
+            content: SizedBox(
+              width: 400, // Fixes width so it doesn't stretch or collapse
+              child: SingleChildScrollView( // Prevents overflow on small screens
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'To: ${user['name'] ?? ''} ${user['surname'] ?? ''} (${user['userid'] ?? 'No ID'})',
+                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
                     ),
-                    items: const [
-                      DropdownMenuItem(value: 'Winner Announcement', child: Text('Winner Announcement')),
-                      DropdownMenuItem(value: 'General Update', child: Text('General Update')),
-                    ],
-                    onChanged: (value) {
-                      setDialogState(() {
-                        messageType = value ?? 'Winner Announcement';
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: messageController,
-                    maxLines: 4,
-                    style: const TextStyle(color: AdminTheme.textLight),
-                    decoration: const InputDecoration(
-                      labelText: 'Message Content',
-                      labelStyle: TextStyle(color: AdminTheme.textLight),
-                      border: OutlineInputBorder(),
-                      hintText: 'Type your message here...',
-                      hintStyle: TextStyle(color: Colors.white54),
+                    const SizedBox(height: 16),
+                    const Text('Message Type', style: TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: messageType,
+                          isExpanded: true,
+                          items: const [
+                            DropdownMenuItem(value: 'Winner Announcement', child: Text('Winner Announcement')),
+                            DropdownMenuItem(value: 'General Update', child: Text('General Update')),
+                          ],
+                          onChanged: (value) {
+                            if (value != null) {
+                              setDialogState(() => messageType = value);
+                            }
+                          },
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+                    const Text('Message Content', style: TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.w500)),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: TextField(
+                        controller: messageController,
+                        maxLines: 5,
+                        style: const TextStyle(color: Colors.black),
+                        decoration: const InputDecoration(
+                          hintText: 'Type your message here...',
+                          hintStyle: TextStyle(color: Colors.grey),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.all(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
             actions: [
@@ -1955,35 +1964,31 @@ class _UsersScreenState extends State<UsersScreen> {
                 child: const Text('CANCEL', style: TextStyle(color: Colors.grey)),
               ),
               ElevatedButton(
-                onPressed: isSending || messageController.text.trim().isEmpty 
-                    ? null 
+                onPressed: isSending || messageController.text.trim().isEmpty
+                    ? null
                     : () async {
-                  setDialogState(() => isSending = true);
-                  try {
-                    // Calls the new backend message endpoint
-                    await AdminApiService.sendMessageToUser(
-                      user['id'],
-                      messageType,
-                      messageController.text.trim(),
-                    );
-                    if (mounted) {
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('$messageType sent to ${user['name']} successfully!'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    }
-                  } catch (e) {
-                    setDialogState(() => isSending = false);
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Failed to send message: $e'), backgroundColor: Colors.red),
-                      );
-                    }
-                  }
-                },
+                        setDialogState(() => isSending = true);
+                        try {
+                          await AdminApiService.sendMessageToUser(
+                            user['id'],
+                            messageType,
+                            messageController.text.trim(),
+                          );
+                          if (context.mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('$messageType sent successfully!'), backgroundColor: Colors.green),
+                            );
+                          }
+                        } catch (e) {
+                          setDialogState(() => isSending = false);
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Failed to send: $e'), backgroundColor: Colors.red),
+                            );
+          }
+                        }
+                      },
                 style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary),
                 child: isSending
                     ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
@@ -2049,9 +2054,7 @@ class _UsersScreenState extends State<UsersScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        _isSearching 
-                            ? 'Search Results: $_totalElements' 
-                            : 'Total Users: $_totalElements',
+                        _isSearching ? 'Search Results: $_totalElements' : 'Total Users: $_totalElements',
                         style: const TextStyle(color: AdminTheme.textLight),
                       ),
                       Text(
@@ -2064,12 +2067,7 @@ class _UsersScreenState extends State<UsersScreen> {
                 const SizedBox(height: 8),
                 Expanded(
                   child: _users.isEmpty
-                      ? const Center(
-                          child: Text(
-                            'No users found.',
-                            style: TextStyle(color: Colors.grey),
-                          ),
-                        )
+                      ? const Center(child: Text('No users found.', style: TextStyle(color: Colors.grey)))
                       : ListView.builder(
                           itemCount: _users.length,
                           itemBuilder: (context, index) {
@@ -2093,10 +2091,7 @@ class _UsersScreenState extends State<UsersScreen> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      user['email'] ?? '',
-                                      style: const TextStyle(color: Colors.grey, fontSize: 12),
-                                    ),
+                                    Text(user['email'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                                     Text(
                                       'ID: ${user['userid'] ?? 'N/A'} | Contact: ${user['contact'] ?? 'N/A'}',
                                       style: const TextStyle(color: Colors.grey, fontSize: 10),
