@@ -682,7 +682,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   bool _obscurePassword = true;
-  bool _rememberMe = false; // Added for Remember Me checkbox
+  bool _rememberMe = false; 
 
   Future<void> _login() async {
     if (_emailController.text.trim().isEmpty) {
@@ -753,36 +753,52 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 32),
                     
-                    // FIX 1 & 2: AutofillGroup triggers browser password managers.
-                    // TextStyle(color: Colors.black) ensures typed text is visible on the white background.
+                    // AUTOFILL GROUP: Triggers browser/PC password managers to save credentials
                     AutofillGroup(
                       child: Column(
                         children: [
                           TextField(
                             controller: _emailController,
                             autofillHints: const [AutofillHints.username],
-                            style: const TextStyle(color: Colors.black),
+                            keyboardType: TextInputType.emailAddress,
+                            // GUARANTEE: Black text
+                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
                             decoration: const InputDecoration(
                               hintText: 'Email Address',
                               hintStyle: TextStyle(color: Colors.black54),
                               prefixIcon: Icon(Icons.email, color: Colors.black54),
+                              // GUARANTEE: White background
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                                borderSide: BorderSide.none,
+                              ),
                             ),
-                            keyboardType: TextInputType.emailAddress,
                           ),
                           const SizedBox(height: 16),
                           TextField(
                             controller: _passwordController,
                             autofillHints: const [AutofillHints.password],
                             obscureText: _obscurePassword,
-                            style: const TextStyle(color: Colors.black),
+                            // GUARANTEE: Black text
+                            style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
                             decoration: InputDecoration(
                               hintText: 'Password',
                               hintStyle: const TextStyle(color: Colors.black54),
                               prefixIcon: const Icon(Icons.lock, color: Colors.black54),
+                              // GUARANTEE: White background
+                              filled: true,
+                              fillColor: Colors.white,
+                              border: const OutlineInputBorder(
+                                borderRadius: BorderRadius.all(Radius.circular(10)),
+                                borderSide: BorderSide.none,
+                              ),
+                              // GUARANTEE: Visible Eye Tool
                               suffixIcon: IconButton(
                                 icon: Icon(
                                   _obscurePassword ? Icons.visibility_off : Icons.visibility,
-                                  color: Colors.black54,
+                                  color: Colors.black54, 
                                 ),
                                 onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
                               ),
@@ -792,9 +808,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
                     
-                    // FIX 3: Remember Me Checkbox
+                    // REMEMBER ME CHECKBOX
                     Row(
                       children: [
                         Checkbox(
@@ -814,7 +830,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: _isLoading ? null : _login,
                       style: ElevatedButton.styleFrom(
