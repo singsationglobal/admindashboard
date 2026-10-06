@@ -1714,7 +1714,7 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
 }
 
 // ============================================================================
-// USERS SCREEN (COMPLETE & FIXED)
+// USERS SCREEN (Updated to show province and age)
 // ============================================================================
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -1730,21 +1730,10 @@ class _UsersScreenState extends State<UsersScreen> {
   int _totalElements = 0;
   bool _isLoading = true;
 
-  // Search functionality
-  final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = '';
-  bool _isSearching = false;
-
   @override
   void initState() {
     super.initState();
     _loadUsers();
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
   }
 
   Future<void> _loadUsers() async {
@@ -1756,7 +1745,6 @@ class _UsersScreenState extends State<UsersScreen> {
         _totalPages = data['totalPages'];
         _totalElements = data['totalElements'];
         _isLoading = false;
-        _isSearching = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
@@ -1766,240 +1754,141 @@ class _UsersScreenState extends State<UsersScreen> {
     }
   }
 
-  Future<void> _performSearch() async {
-    if (_searchQuery.trim().isEmpty) {
-      _loadUsers();
-      return;
-    }
-    setState(() {
-      _isLoading = true;
-      _isSearching = true;
-    });
-    try {
-      final data = await AdminApiService.searchUsers(_searchQuery.trim(), 0, 20);
-      setState(() {
-        _users = data['users'];
-        _totalPages = data['totalPages'];
-        _totalElements = data['totalElements'];
-        _currentPage = 0;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Search failed: $e')),
-      );
-    }
-  }
+  // ... (keep all your existing ban/unban/delete methods)
 
-  Future<void> _clearSearch() async {
-    _searchController.clear();
-    setState(() => _searchQuery = '');
-    _loadUsers();
-  }
-
-  Future<void> _banUser(int userId, String userName) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ban User'),
-        content: Text('Are you sure you want to ban $userName?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('BAN'),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('User Management'),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardScreen()),
           ),
-        ],
+        ),
       ),
-    );
-    if (confirm == true) {
-      try {
-        await AdminApiService.banUser(userId);
-        _isSearching ? _performSearch() : _loadUsers();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User banned successfully')));
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to ban user: $e')));
-      }
-    }
-  }
-
-  Future<void> _unbanUser(int userId, String userName) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Unban User'),
-        content: Text('Are you sure you want to unban $userName?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('UNBAN'),
-          ),
-        ],
-      ),
-    );
-    if (confirm == true) {
-      try {
-        await AdminApiService.unbanUser(userId);
-        _isSearching ? _performSearch() : _loadUsers();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User unbanned successfully')));
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to unban user: $e')));
-      }
-    }
-  }
-
-  Future<void> _deleteUser(int userId, String userName) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete User'),
-        content: Text('Permanently delete $userName? This cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('DELETE'),
-          ),
-        ],
-      ),
-    );
-    if (confirm == true) {
-      try {
-        await AdminApiService.deleteUser(userId);
-        _isSearching ? _performSearch() : _loadUsers();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User deleted successfully')));
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete user: $e')));
-      }
-    }
-  }
-
-  // ─── FIXED MESSAGE DIALOG (Will not fall apart) ───
-  Future<void> _showMessageDialog(Map<String, dynamic> user) async {
-    String messageType = 'Winner Announcement';
-    final messageController = TextEditingController();
-    bool isSending = false;
-
-    await showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            backgroundColor: AdminTheme.surface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            title: const Text(
-              'Message User',
-              style: TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.bold),
-            ),
-            content: SizedBox(
-              width: 400, // Fixes width so it doesn't stretch or collapse
-              child: SingleChildScrollView( // Prevents overflow on small screens
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'To: ${user['name'] ?? ''} ${user['surname'] ?? ''} (${user['userid'] ?? 'No ID'})',
-                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('Message Type', style: TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Total Users: $_totalElements',
+                        style: const TextStyle(color: AdminTheme.textLight),
                       ),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<String>(
-                          value: messageType,
-                          isExpanded: true,
-                          items: const [
-                            DropdownMenuItem(value: 'Winner Announcement', child: Text('Winner Announcement')),
-                            DropdownMenuItem(value: 'General Update', child: Text('General Update')),
-                          ],
-                          onChanged: (value) {
-                            if (value != null) {
-                              setDialogState(() => messageType = value);
-                            }
-                          },
-                        ),
+                      Text(
+                        'Page ${_currentPage + 1} of $_totalPages',
+                        style: const TextStyle(color: AdminTheme.textLight),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text('Message Content', style: TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.w500)),
-                    const SizedBox(height: 8),
-                    Container(
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: TextField(
-                        controller: messageController,
-                        maxLines: 5,
-                        style: const TextStyle(color: Colors.black),
-                        decoration: const InputDecoration(
-                          hintText: 'Type your message here...',
-                          hintStyle: TextStyle(color: Colors.grey),
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.all(12),
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _users.length,
+                    itemBuilder: (context, index) {
+                      final user = _users[index];
+                      final isActive = user['isActive'] ?? true;
+                      return Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        color: AdminTheme.surface,
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: isActive ? Colors.green : Colors.red,
+                            child: Text(
+                              user['name']?.substring(0, 1).toUpperCase() ?? '?',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          title: Text(
+                            '${user['name'] ?? 'Unknown'} ${user['surname'] ?? ''}',
+                            style: const TextStyle(color: AdminTheme.textLight),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user['email'] ?? '',
+                                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                              ),
+                              Text(
+                                'UserID: ${user['userid'] ?? 'N/A'}',
+                                style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                              ),
+                              // NEW: Show Age and Province
+                              if (user['age'] != null && user['age'] != 0)
+                                Text(
+                                  'Age: ${user['age']} | Province: ${user['province'] ?? 'N/A'}',
+                                  style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                                ),
+                            ],
+                          ),
+                          trailing: Wrap(
+                            spacing: 8,
+                            children: [
+                              if (isActive)
+                                IconButton(
+                                  icon: const Icon(Icons.block, color: Colors.orange),
+                                  onPressed: () => _banUser(user['id'], user['name']),
+                                  tooltip: 'Ban',
+                                ),
+                              if (!isActive)
+                                IconButton(
+                                  icon: const Icon(Icons.check_circle, color: Colors.green),
+                                  onPressed: () => _unbanUser(user['id'], user['name']),
+                                  tooltip: 'Unban',
+                                ),
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _deleteUser(user['id'], user['name']),
+                                tooltip: 'Delete',
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (_currentPage > 0)
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _currentPage--;
+                              _loadUsers();
+                            });
+                          },
+                          child: const Text('PREVIOUS'),
+                        ),
+                      if (_currentPage < _totalPages - 1)
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _currentPage++;
+                              _loadUsers();
+                            });
+                          },
+                          child: const Text('NEXT'),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            actions: [
-              TextButton(
-                onPressed: isSending ? null : () => Navigator.pop(context),
-                child: const Text('CANCEL', style: TextStyle(color: Colors.grey)),
-              ),
-              ElevatedButton(
-                onPressed: isSending || messageController.text.trim().isEmpty
-                    ? null
-                    : () async {
-                        setDialogState(() => isSending = true);
-                        try {
-                          await AdminApiService.sendMessageToUser(
-                            user['id'],
-                            messageType,
-                            messageController.text.trim(),
-                          );
-                          if (context.mounted) {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('$messageType sent successfully!'), backgroundColor: Colors.green),
-                            );
-                          }
-                        } catch (e) {
-                          setDialogState(() => isSending = false);
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Failed to send: $e'), backgroundColor: Colors.red),
-                            );
-          }
-                        }
-                      },
-                style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary),
-                child: isSending
-                    ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('SEND'),
-              ),
-            ],
-          );
-        },
-      ),
     );
   }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -2760,7 +2649,7 @@ class _SongsScreenState extends State<SongsScreen> {
 }
 
 // ============================================================================
-// WINNERS SCREEN
+// WINNERS SCREEN (Updated with auto-fill and user search)
 // ============================================================================
 class WinnersScreen extends StatefulWidget {
   const WinnersScreen({super.key});
@@ -2781,6 +2670,11 @@ class _WinnersScreenState extends State<WinnersScreen> {
   final _provinceController = TextEditingController();
   final _messageController = TextEditingController();
   int? _editingWinnerId;
+  
+  // User search functionality
+  final _userSearchController = TextEditingController();
+  List<dynamic> _searchedUsers = [];
+  bool _isSearchingUsers = false;
 
   @override
   void initState() {
@@ -2796,6 +2690,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
     _winnerAgeController.dispose();
     _provinceController.dispose();
     _messageController.dispose();
+    _userSearchController.dispose();
     super.dispose();
   }
 
@@ -2821,13 +2716,57 @@ class _WinnersScreenState extends State<WinnersScreen> {
     }
   }
 
+  // Search users by name or userid
+  Future<void> _searchUsers(String query) async {
+    if (query.isEmpty) {
+      setState(() => _searchedUsers = []);
+      return;
+    }
+    
+    setState(() => _isSearchingUsers = true);
+    try {
+      final data = await AdminApiService.getUsers(0, 50);
+      final users = data['users'] as List<dynamic>;
+      final filtered = users.where((user) {
+        final name = (user['name'] ?? '').toLowerCase();
+        final surname = (user['surname'] ?? '').toLowerCase();
+        final userid = (user['userid'] ?? '').toLowerCase();
+        final searchLower = query.toLowerCase();
+        
+        return name.contains(searchLower) || 
+               surname.contains(searchLower) || 
+               userid.contains(searchLower);
+      }).toList();
+      
+      setState(() {
+        _searchedUsers = filtered;
+        _isSearchingUsers = false;
+      });
+    } catch (e) {
+      setState(() => _isSearchingUsers = false);
+      print('Failed to search users: $e');
+    }
+  }
+
+  // Auto-fill form with user data
+  void _autoFillUserData(Map<String, dynamic> user) {
+    setState(() {
+      _winnerNameController.text = '${user['name'] ?? ''} ${user['surname'] ?? ''}'.trim();
+      _winnerUseridController.text = user['userid'] ?? '';
+      _winnerAgeController.text = (user['age'] ?? 0).toString();
+      _provinceController.text = user['province'] ?? '';
+      _searchedUsers = [];
+      _userSearchController.clear();
+    });
+  }
+
   Future<void> _announceWinner() async {
     if (_formKey.currentState!.validate()) {
       final winnerData = {
         'category': _selectedCategory,
         'winnerName': _winnerNameController.text.trim(),
         'winnerUserid': _winnerUseridController.text.trim(),
-        'winnerAge': int.parse(_winnerAgeController.text.trim()),
+        'winnerAge': int.tryParse(_winnerAgeController.text.trim()) ?? 0,
         'province': _provinceController.text.trim(),
         'message': _messageController.text.trim(),
       };
@@ -2853,7 +2792,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
         'category': _selectedCategory,
         'winnerName': _winnerNameController.text.trim(),
         'winnerUserid': _winnerUseridController.text.trim(),
-        'winnerAge': int.parse(_winnerAgeController.text.trim()),
+        'winnerAge': int.tryParse(_winnerAgeController.text.trim()) ?? 0,
         'province': _provinceController.text.trim(),
         'message': _messageController.text.trim(),
       };
@@ -2956,6 +2895,49 @@ class _WinnersScreenState extends State<WinnersScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
+          // User Search Field
+          TextField(
+            controller: _userSearchController,
+            decoration: const InputDecoration(
+              labelText: 'Search User (Name or ID)',
+              hintText: 'Type to search...',
+              prefixIcon: Icon(Icons.search),
+            ),
+            onChanged: _searchUsers,
+          ),
+          const SizedBox(height: 8),
+          
+          // Search Results Dropdown
+          if (_searchedUsers.isNotEmpty)
+            Container(
+              constraints: const BoxConstraints(maxHeight: 200),
+              decoration: BoxDecoration(
+                color: AdminTheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AdminTheme.primary),
+              ),
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: _searchedUsers.length > 5 ? 5 : _searchedUsers.length,
+                itemBuilder: (context, index) {
+                  final user = _searchedUsers[index];
+                  return ListTile(
+                    title: Text('${user['name']} ${user['surname'] ?? ''}'),
+                    subtitle: Text('ID: ${user['userid']} | Age: ${user['age'] ?? 'N/A'}'),
+                    onTap: () => _autoFillUserData(user),
+                  );
+                },
+              ),
+            ),
+          
+          if (_isSearchingUsers)
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: CircularProgressIndicator(),
+            ),
+          
+          const SizedBox(height: 16),
+          
           DropdownButtonFormField<String>(
             value: _selectedCategory,
             decoration: const InputDecoration(labelText: 'Category'),
@@ -3011,6 +2993,8 @@ class _WinnersScreenState extends State<WinnersScreen> {
     _winnerAgeController.clear();
     _provinceController.clear();
     _messageController.clear();
+    _userSearchController.clear();
+    _searchedUsers = [];
   }
 
   void _showAnnounceDialog() {
@@ -3057,99 +3041,98 @@ class _WinnersScreenState extends State<WinnersScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _winners.isEmpty
-              ? const Center(
-                  child: Text(
-                    'No winners announced yet',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: _winners.length,
-                  itemBuilder: (context, index) {
-                    final winner = _winners[index];
-                    return Card(
-                      color: AdminTheme.surface,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+          ? const Center(
+              child: Text(
+                'No winners announced yet',
+                style: TextStyle(color: Colors.grey),
+              ),
+            )
+          : ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _winners.length,
+              itemBuilder: (context, index) {
+                final winner = _winners[index];
+                return Card(
+                  color: AdminTheme.surface,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
                           children: [
-                            Row(
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: winner['category'] == 'CELEBRITY' ? Colors.amber : AdminTheme.primary,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Text(
-                                    winner['category'] ?? 'Unknown',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: winner['category'] == 'CELEBRITY' ? Colors.amber : AdminTheme.primary,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                winner['category'] ?? 'Unknown',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
                                 ),
-                                const Spacer(),
-                                Text(
-                                  DateFormat('dd MMM yyyy').format(DateTime.parse(winner['announcedAt'])),
-                                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
-                                ),
-                                if (canModify)
-                                  IconButton(
-                                    icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
-                                    onPressed: () => _editWinner(winner),
-                                    tooltip: 'Edit Winner',
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                                if (canModify)
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red, size: 20),
-                                    onPressed: () => _deleteWinner(winner['id'], winner['winnerName']),
-                                    tooltip: 'Delete Winner',
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              winner['winnerName'] ?? 'Unknown',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                color: AdminTheme.textLight,
                               ),
                             ),
+                            const Spacer(),
                             Text(
-                              'User ID: ${winner['winnerUserid'] ?? 'N/A'}',
-                              style: TextStyle(color: Colors.grey[400]),
+                              DateFormat('dd MMM yyyy').format(DateTime.parse(winner['announcedAt'])),
+                              style: TextStyle(color: Colors.grey[500], fontSize: 12),
                             ),
-                            Text(
-                              'Age: ${winner['winnerAge']} | Province: ${winner['province'] ?? 'N/A'}',
-                              style: TextStyle(color: Colors.grey[400]),
-                            ),
-                            if (winner['message'] != null && winner['message'].isNotEmpty)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  winner['message'],
-                                  style: TextStyle(color: Colors.grey[300]),
-                                ),
+                            if (canModify)
+                              IconButton(
+                                icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                                onPressed: () => _editWinner(winner),
+                                tooltip: 'Edit Winner',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                              ),
+                            if (canModify)
+                              IconButton(
+                                icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                onPressed: () => _deleteWinner(winner['id'], winner['winnerName']),
+                                tooltip: 'Delete Winner',
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
                               ),
                           ],
                         ),
-                      ),
-                    );
-                  },
-                ),
+                        const SizedBox(height: 12),
+                        Text(
+                          winner['winnerName'] ?? 'Unknown',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AdminTheme.textLight,
+                          ),
+                        ),
+                        Text(
+                          'User ID: ${winner['winnerUserid'] ?? 'N/A'}',
+                          style: TextStyle(color: Colors.grey[400]),
+                        ),
+                        Text(
+                          'Age: ${winner['winnerAge']} | Province: ${winner['province'] ?? 'N/A'}',
+                          style: TextStyle(color: Colors.grey[400]),
+                        ),
+                        if (winner['message'] != null && winner['message'].isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8),
+                            child: Text(
+                              winner['message'],
+                              style: TextStyle(color: Colors.grey[300]),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
     );
   }
 }
-
 // ============================================================================
 // COMPLAINTS SCREEN
 // ============================================================================
