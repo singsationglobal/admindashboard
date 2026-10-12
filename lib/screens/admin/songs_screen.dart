@@ -420,12 +420,13 @@ class _SongsScreenState extends State<SongsScreen> {
                   ),
                 ),
                 
-                // 3. BULK ACTION BUTTONS - THIS IS THE FIX!
-                // These buttons NOW appear RIGHT AFTER "Select All" bar, BEFORE the song list
+                // 3. BULK ACTION BUTTONS (Eye Tools)
+                // This is placed BEFORE the Expanded widget so it never gets pushed off screen
                 if (_selectedSongIds.isNotEmpty)
                   Container(
-                    padding: const EdgeInsets.all(12),
-                    color: Colors.blue.withOpacity(0.1),
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    color: Colors.blue.withOpacity(0.2),
                     child: Row(
                       children: [
                         Text(
@@ -437,45 +438,35 @@ class _SongsScreenState extends State<SongsScreen> {
                           ),
                         ),
                         const Spacer(),
-                        // HIDE SELECTED BUTTON
-                        ElevatedButton.icon(
-                          onPressed: _isBulkUpdating ? null : () => _bulkUpdateSongs(false),
-                          icon: const Icon(Icons.visibility_off, size: 18),
-                          label: const Text('Hide Selected'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.orange,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // UNHIDE SELECTED BUTTON
-                        ElevatedButton.icon(
-                          onPressed: _isBulkUpdating ? null : () => _bulkUpdateSongs(true),
-                          icon: const Icon(Icons.visibility, size: 18),
-                          label: const Text('Unhide Selected'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        // CLEAR SELECTION BUTTON
+                        // HIDE SELECTED (Orange Eye)
                         IconButton(
+                          icon: const Icon(Icons.visibility_off, color: Colors.orange, size: 28),
+                          tooltip: 'Hide Selected',
+                          onPressed: () => _bulkUpdateSongs(false),
+                        ),
+                        const SizedBox(width: 8),
+                        // UNHIDE SELECTED (Green Eye)
+                        IconButton(
+                          icon: const Icon(Icons.visibility, color: Colors.green, size: 28),
+                          tooltip: 'Unhide Selected',
+                          onPressed: () => _bulkUpdateSongs(true),
+                        ),
+                        const SizedBox(width: 8),
+                        // CLEAR SELECTION
+                        IconButton(
+                          icon: const Icon(Icons.clear, color: Colors.white70, size: 28),
+                          tooltip: 'Clear Selection',
                           onPressed: () {
                             setState(() {
                               _selectedSongIds.clear();
                             });
                           },
-                          icon: const Icon(Icons.clear, color: Colors.white),
-                          tooltip: 'Clear Selection',
                         ),
                       ],
                     ),
                   ),
                 
-                // 4. Song List (Expanded takes remaining space)
+                // 4. Song List (Expanded takes the remaining space)
                 Expanded(
                   child: ListView.builder(
                     itemCount: _filteredSongs.length,
