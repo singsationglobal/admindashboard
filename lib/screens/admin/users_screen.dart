@@ -130,45 +130,92 @@ class _UsersScreenState extends State<UsersScreen> {
 
   void _showMessageDialog(dynamic user) {
     final messageController = TextEditingController();
+    String selectedType = 'SUPPORT'; // Default message type
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Message User'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Send a message to ${user['name'] ?? ''} ${user['surname'] ?? ''}'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: messageController,
-              maxLines: 3,
-              decoration: const InputDecoration(hintText: 'Type your message here...', border: OutlineInputBorder()),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) => AlertDialog(
+          title: const Text('Message User'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Send a message to ${user['name'] ?? ''} ${user['surname'] ?? ''}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              
+              // NEW: Dropdown to categorize the message for the user's app
+              DropdownButtonFormField<String>(
+                value: selectedType,
+                decoration: const InputDecoration(
+                  labelText: 'Message Category',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+                items: const [
+                  DropdownMenuItem(value: 'SUPPORT', child: Text('Support')),
+                  DropdownMenuItem(value: 'COMPLAINT', child: Text('Complaint')),
+                  DropdownMenuItem(value: 'GENERAL', child: Text('General Announcement')),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    setStateDialog(() {
+                      selectedType = value;
+                    });
+                  }
+                },
+              ),
+              
+              const SizedBox(height: 16),
+              TextField(
+                controller: messageController,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  hintText: 'Type your message here...',
+                  border: OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (messageController.text.trim().isNotEmpty) {
+                  try {
+                    await AdminApiService.sendMessageToUser(
+                      user['id'] is int ? user['id'] : int.parse(user['id'].toString()),
+                      selectedType, // Sends 'SUPPORT', 'COMPLAINT', or 'GENERAL' to your backend
+                      messageController.text.trim(),
+                    );
+                    if (!mounted) return;
+                    Navigator.pop(context);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Message sent successfully to user\'s app'),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
+                  } catch (e) {
+                    if (!mounted) return;
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Failed to send message: $e'), backgroundColor: Colors.red),
+                    );
+                  }
+                }
+              },
+              child: const Text('Send Message'),
             ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(
-            onPressed: () async {
-              if (messageController.text.trim().isNotEmpty) {
-                try {
-                  await AdminApiService.sendMessageToUser(
-                    user['id'] is int ? user['id'] : int.parse(user['id'].toString()),
-                    'ADMIN_MESSAGE',
-                    messageController.text.trim(),
-                  );
-                  if (!mounted) return;
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Message sent successfully')));
-                } catch (e) {
-                  if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send message: $e')));
-                }
-              }
-            },
-            child: const Text('Send'),
-          ),
-        ],
       ),
     );
   }
