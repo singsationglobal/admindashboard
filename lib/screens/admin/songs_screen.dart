@@ -18,6 +18,11 @@ class _SongsScreenState extends State<SongsScreen> {
   int _totalPages = 0;
   int _totalElements = 0;
   bool _isLoading = true;
+  
+  // NEW: Bulk selection state
+  Set<int> _selectedSongIds = {};
+  bool _isBulkUpdating = false;
+
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _artistController = TextEditingController();
@@ -206,6 +211,63 @@ class _SongsScreenState extends State<SongsScreen> {
     }
   }
 
+  // ============================================================================
+  // NEW: BULK UPDATE METHOD
+  // ============================================================================
+  Future<void> _bulkUpdateSongs(bool makeActive) async {
+    if (_selectedSongIds.isEmpty) return;
+    
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(makeActive ? 'Unhide Selected Songs?' : 'Hide Selected Songs?'),
+        content: Text('Are you sure you want to ${makeActive ? "unhide" : "hide"} ${_selectedSongIds.length} songs?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true), 
+            style: ElevatedButton.styleFrom(backgroundColor: makeActive ? Colors.green : Colors.orange),
+            child: const Text('CONFIRM', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      setState(() => _isBulkUpdating = true);
+      int successCount = 0;
+      final idsToUpdate = List<int>.from(_selectedSongIds); // Copy to avoid concurrent modification
+      
+      for (var id in idsToUpdate) {
+        try {
+          if (makeActive) {
+            await AdminApiService.unhideSong(id);
+          } else {
+            await AdminApiService.hideSong(id);
+          }
+          successCount++;
+        } catch (e) {
+          print('Failed to update song $id: $e');
+        }
+      }
+      
+      final totalSelected = idsToUpdate.length;
+      setState(() {
+        _isBulkUpdating = false;
+        _selectedSongIds.clear();
+      });
+      
+      _loadSongs(); // Reload to reflect changes
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Successfully updated $successCount out of $totalSelected songs.'),
+          backgroundColor: successCount > 0 ? Colors.green : Colors.red,
+        ),
+      );
+    }
+  }
+
   Widget _buildForm() {
     return Form(
       key: _formKey,
@@ -276,11 +338,72 @@ class _SongsScreenState extends State<SongsScreen> {
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()))),
         actions: [IconButton(icon: const Icon(Icons.add), onPressed: _showAddSongDialog, tooltip: 'Add Song')],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
+      body: _isLoading || _isBulkUpdating
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  if (_isBulkUpdating) const Text('Updating selected songs...', style: TextStyle(color: AdminTheme.textLight)),
+                ],
+              ),
+            )
           : Column(
               children: [
-                Padding(padding: const EdgeInsets.all(16), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Total Songs: $_totalElements', style: const TextStyle(color: AdminTheme.textLight)), Text('Page ${_currentPage + 1} of $_totalPages', style: const TextStyle(color: AdminTheme.textLight))])),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _songs.isNotEmpty && _selectedSongIds.length == _songs.length,
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    if (value == true) {
+                                      _selectedSongIds.addAll(_songs.map((s) => s['id'] as int));
+                                    } else {
+                                      _selectedSongIds.clear();
+                                    }
+                                  });
+                                },
+                              ),
+                              const Text('Select All', style: TextStyle(color: AdminTheme.textLight)),
+                            ],
+                          ),
+                          Text('Page ${_currentPage + 1} of $_totalPages', style: const TextStyle(color: AdminTheme.textLight)),
+                        ],
+                      ),
+                      if (_selectedSongIds.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            ElevatedButton.icon(
+                              onPressed: _isBulkUpdating ? null : () => _bulkUpdateSongs(false),
+                              icon: const Icon(Icons.visibility_off, size: 18),
+                              label: const Text('Hide Selected'),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                            ),
+                            const SizedBox(width: 12),
+                            ElevatedButton.icon(
+                              onPressed: _isBulkUpdating ? null : () => _bulkUpdateSongs(true),
+                              icon: const Icon(Icons.visibility, size: 18),
+                              label: const Text('Unhide Selected'),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                            ),
+                            const SizedBox(width: 12),
+                            Text('${_selectedSongIds.length} selected', style: const TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
                 Expanded(
                   child: ListView.builder(
                     itemCount: _songs.length,
@@ -291,7 +414,25 @@ class _SongsScreenState extends State<SongsScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         color: AdminTheme.surface,
                         child: ListTile(
-                          leading: CircleAvatar(backgroundColor: isActive ? Colors.green : Colors.grey, child: const Icon(Icons.music_note, color: Colors.white, size: 20)),
+                          leading: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Checkbox(
+                                value: _selectedSongIds.contains(song['id']),
+                                onChanged: (bool? value) {
+                                  setState(() {
+                                    if (value == true) {
+                                      _selectedSongIds.add(song['id'] as int);
+                                    } else {
+                                      _selectedSongIds.remove(song['id']);
+                                    }
+                                  });
+                                },
+                              ),
+                              const SizedBox(width: 4),
+                              CircleAvatar(backgroundColor: isActive ? Colors.green : Colors.grey, child: const Icon(Icons.music_note, color: Colors.white, size: 20)),
+                            ],
+                          ),
                           title: Text(song['title'] ?? 'Unknown', style: const TextStyle(color: AdminTheme.textLight)),
                           subtitle: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
