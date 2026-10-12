@@ -349,59 +349,91 @@ class _SongsScreenState extends State<SongsScreen> {
             )
           : Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
+                // Bulk Action Bar
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  color: AdminTheme.surface,
                   child: Column(
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _songs.isNotEmpty && _selectedSongIds.length == _songs.length,
-                                onChanged: (bool? value) {
-                                  setState(() {
-                                    if (value == true) {
-                                      _selectedSongIds.addAll(_songs.map((s) => s['id'] as int));
-                                    } else {
-                                      _selectedSongIds.clear();
-                                    }
-                                  });
-                                },
-                              ),
-                              const Text('Select All', style: TextStyle(color: AdminTheme.textLight)),
-                            ],
+                          Checkbox(
+                            value: _songs.isNotEmpty && _selectedSongIds.length == _songs.length,
+                            tristate: true,
+                            onChanged: (bool? value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedSongIds.addAll(_songs.map((s) => s['id'] as int));
+                                } else {
+                                  _selectedSongIds.clear();
+                                }
+                              });
+                            },
                           ),
+                          const Text('Select All', style: TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.bold)),
+                          const Spacer(),
                           Text('Page ${_currentPage + 1} of $_totalPages', style: const TextStyle(color: AdminTheme.textLight)),
                         ],
                       ),
-                      if (_selectedSongIds.isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            ElevatedButton.icon(
-                              onPressed: _isBulkUpdating ? null : () => _bulkUpdateSongs(false),
-                              icon: const Icon(Icons.visibility_off, size: 18),
-                              label: const Text('Hide Selected'),
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                            ),
-                            const SizedBox(width: 12),
-                            ElevatedButton.icon(
-                              onPressed: _isBulkUpdating ? null : () => _bulkUpdateSongs(true),
-                              icon: const Icon(Icons.visibility, size: 18),
-                              label: const Text('Unhide Selected'),
-                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                            ),
-                            const SizedBox(width: 12),
-                            Text('${_selectedSongIds.length} selected', style: const TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.bold)),
-                          ],
+                      // Bulk Action Buttons - Only show when songs are selected
+                      if (_selectedSongIds.isNotEmpty)
+                        Container(
+                          margin: const EdgeInsets.only(top: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                '${_selectedSongIds.length} selected',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const Spacer(),
+                              ElevatedButton.icon(
+                                onPressed: _isBulkUpdating ? null : () => _bulkUpdateSongs(false),
+                                icon: const Icon(Icons.visibility_off, size: 18),
+                                label: const Text('Hide Selected'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton.icon(
+                                onPressed: _isBulkUpdating ? null : () => _bulkUpdateSongs(true),
+                                icon: const Icon(Icons.visibility, size: 18),
+                                label: const Text('Unhide Selected'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _selectedSongIds.clear();
+                                  });
+                                },
+                                icon: const Icon(Icons.clear, color: Colors.white),
+                                tooltip: 'Clear Selection',
+                              ),
+                            ],
+                          ),
                         ),
-                      ],
                     ],
                   ),
                 ),
+                // Song List
                 Expanded(
                   child: ListView.builder(
                     itemCount: _songs.length,
@@ -460,6 +492,7 @@ class _SongsScreenState extends State<SongsScreen> {
                     },
                   ),
                 ),
+                // Pagination
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
