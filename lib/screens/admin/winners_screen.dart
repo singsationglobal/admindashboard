@@ -1,3 +1,4 @@
+import 'dart:convert'; // <-- ADDED THIS LINE
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
@@ -136,7 +137,11 @@ class _WinnersScreenState extends State<WinnersScreen> {
         'message': _messageController.text.trim(),
       };
       try {
-        final response = await http.put(Uri.parse('${ApiConfig.baseUrl}/admin/winners/${_editingWinnerId}'), headers: await AdminApiService.getAuthHeader(), body: json.encode(winnerData));
+        final response = await http.put(
+          Uri.parse('${ApiConfig.baseUrl}/admin/winners/${_editingWinnerId}'), 
+          headers: await AdminApiService.getAuthHeader(), 
+          body: json.encode(winnerData) // Now 'json' is recognized!
+        );
         if (response.statusCode == 200) {
           _clearForm();
           _loadWinners();
