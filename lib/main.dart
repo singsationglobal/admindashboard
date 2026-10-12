@@ -1714,7 +1714,7 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
 }
 
 // ============================================================================
-// USERS SCREEN (Updated to show province and age)
+// USERS SCREEN (Merged & Fixed)
 // ============================================================================
 class UsersScreen extends StatefulWidget {
   const UsersScreen({super.key});
@@ -1730,16 +1730,29 @@ class _UsersScreenState extends State<UsersScreen> {
   int _totalElements = 0;
   bool _isLoading = true;
 
+  // Search functionality variables
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+  bool _isSearching = false;
+
   @override
   void initState() {
     super.initState();
     _loadUsers();
   }
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   Future<void> _loadUsers() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final data = await AdminApiService.getUsers(_currentPage, 20);
+      if (!mounted) return;
       setState(() {
         _users = data['users'];
         _totalPages = data['totalPages'];
@@ -1747,6 +1760,7 @@ class _UsersScreenState extends State<UsersScreen> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load users: $e')),
@@ -1754,141 +1768,43 @@ class _UsersScreenState extends State<UsersScreen> {
     }
   }
 
-  // ... (keep all your existing ban/unban/delete methods)
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('User Management'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => const DashboardScreen()),
-          ),
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Total Users: $_totalElements',
-                        style: const TextStyle(color: AdminTheme.textLight),
-                      ),
-                      Text(
-                        'Page ${_currentPage + 1} of $_totalPages',
-                        style: const TextStyle(color: AdminTheme.textLight),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: _users.length,
-                    itemBuilder: (context, index) {
-                      final user = _users[index];
-                      final isActive = user['isActive'] ?? true;
-                      return Card(
-                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                        color: AdminTheme.surface,
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: isActive ? Colors.green : Colors.red,
-                            child: Text(
-                              user['name']?.substring(0, 1).toUpperCase() ?? '?',
-                              style: const TextStyle(color: Colors.white),
-                            ),
-                          ),
-                          title: Text(
-                            '${user['name'] ?? 'Unknown'} ${user['surname'] ?? ''}',
-                            style: const TextStyle(color: AdminTheme.textLight),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user['email'] ?? '',
-                                style: TextStyle(color: Colors.grey[400], fontSize: 12),
-                              ),
-                              Text(
-                                'UserID: ${user['userid'] ?? 'N/A'}',
-                                style: TextStyle(color: Colors.grey[500], fontSize: 10),
-                              ),
-                              // NEW: Show Age and Province
-                              if (user['age'] != null && user['age'] != 0)
-                                Text(
-                                  'Age: ${user['age']} | Province: ${user['province'] ?? 'N/A'}',
-                                  style: TextStyle(color: Colors.grey[500], fontSize: 10),
-                                ),
-                            ],
-                          ),
-                          trailing: Wrap(
-                            spacing: 8,
-                            children: [
-                              if (isActive)
-                                IconButton(
-                                  icon: const Icon(Icons.block, color: Colors.orange),
-                                  onPressed: () => _banUser(user['id'], user['name']),
-                                  tooltip: 'Ban',
-                                ),
-                              if (!isActive)
-                                IconButton(
-                                  icon: const Icon(Icons.check_circle, color: Colors.green),
-                                  onPressed: () => _unbanUser(user['id'], user['name']),
-                                  tooltip: 'Unban',
-                                ),
-                              IconButton(
-                                icon: const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () => _deleteUser(user['id'], user['name']),
-                                tooltip: 'Delete',
-                              ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (_currentPage > 0)
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _currentPage--;
-                              _loadUsers();
-                            });
-                          },
-                          child: const Text('PREVIOUS'),
-                        ),
-                      if (_currentPage < _totalPages - 1)
-                        ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              _currentPage++;
-                              _loadUsers();
-                            });
-                          },
-                          child: const Text('NEXT'),
-                        ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-    );
+  void _clearSearch() {
+    setState(() {
+      _searchQuery = '';
+      _searchController.clear();
+      _isSearching = false;
+    });
+    _loadUsers();
   }
-}
+
+  // TODO: Ensure you have this method implemented below, or adapt it to your API
+  Future<void> _performSearch() async {
+    if (!mounted) return;
+    setState(() => _isLoading = true);
+    try {
+      // Example: final data = await AdminApiService.searchUsers(_searchQuery, _currentPage, 20);
+      // setState(() {
+      //   _users = data['users'];
+      //   _totalPages = data['totalPages'];
+      //   _totalElements = data['totalElements'];
+      //   _isLoading = false;
+      // });
+      
+      // Temporary fallback: just reload if search method isn't ready
+      await _loadUsers(); 
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Search failed: $e')),
+      );
+    }
+  }
+
+  // ============================================================================
+  // KEEP YOUR EXISTING METHODS HERE:
+  // _banUser, _unbanUser, _deleteUser, _showMessageDialog, etc.
+  // ============================================================================
 
   @override
   Widget build(BuildContext context) {
@@ -1914,7 +1830,10 @@ class _UsersScreenState extends State<UsersScreen> {
                     controller: _searchController,
                     textInputAction: TextInputAction.search,
                     onSubmitted: (value) {
-                      setState(() => _searchQuery = value);
+                      setState(() {
+                        _searchQuery = value;
+                        _isSearching = value.isNotEmpty;
+                      });
                       _performSearch();
                     },
                     style: const TextStyle(color: AdminTheme.textLight),
@@ -1937,6 +1856,8 @@ class _UsersScreenState extends State<UsersScreen> {
                     ),
                   ),
                 ),
+                
+                // ─── STATS ROW ───
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Row(
@@ -1954,6 +1875,8 @@ class _UsersScreenState extends State<UsersScreen> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                
+                // ─── USER LIST ───
                 Expanded(
                   child: _users.isEmpty
                       ? const Center(child: Text('No users found.', style: TextStyle(color: Colors.grey)))
@@ -1980,11 +1903,20 @@ class _UsersScreenState extends State<UsersScreen> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(user['email'] ?? '', style: const TextStyle(color: Colors.grey, fontSize: 12)),
                                     Text(
-                                      'ID: ${user['userid'] ?? 'N/A'} | Contact: ${user['contact'] ?? 'N/A'}',
-                                      style: const TextStyle(color: Colors.grey, fontSize: 10),
+                                      user['email'] ?? '',
+                                      style: TextStyle(color: Colors.grey[400], fontSize: 12),
                                     ),
+                                    Text(
+                                      'UserID: ${user['userid'] ?? 'N/A'} | Contact: ${user['contact'] ?? 'N/A'}',
+                                      style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                                    ),
+                                    // NEW: Show Age and Province
+                                    if (user['age'] != null && user['age'] != 0)
+                                      Text(
+                                        'Age: ${user['age']} | Province: ${user['province'] ?? 'N/A'}',
+                                        style: TextStyle(color: Colors.grey[500], fontSize: 10),
+                                      ),
                                   ],
                                 ),
                                 trailing: Wrap(
@@ -2020,6 +1952,8 @@ class _UsersScreenState extends State<UsersScreen> {
                           },
                         ),
                 ),
+                
+                // ─── PAGINATION ───
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
