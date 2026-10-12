@@ -75,13 +75,13 @@ class AboutPage extends StatelessWidget {
               alignment: WrapAlignment.center,
               children: [
                 _TeamCard(
-                  name: 'JP LEGEND',
+                  name: 'JAN PRINSLOO',
                   role: 'Founder & CEO',
                   imageUrl: teamJpUrl,
                   bio: 'Singer, songwriter, entrepreneur.',
                 ),
                 _TeamCard(
-                  name: 'CYPRIAN HEYDEMAN',
+                  name: 'CYPRIAN HEIDEMAN',
                   role: 'IT Director',
                   imageUrl: teamCyprianUrl,
                   bio: 'Technology and platform lead.',
