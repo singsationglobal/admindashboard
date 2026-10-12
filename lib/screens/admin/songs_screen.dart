@@ -420,7 +420,8 @@ class _SongsScreenState extends State<SongsScreen> {
                   ),
                 ),
                 
-                // 3. Bulk Action Buttons (Shows ONLY when songs are selected)
+                // 3. BULK ACTION BUTTONS - THIS IS THE FIX!
+                // These buttons NOW appear RIGHT AFTER "Select All" bar, BEFORE the song list
                 if (_selectedSongIds.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -436,6 +437,7 @@ class _SongsScreenState extends State<SongsScreen> {
                           ),
                         ),
                         const Spacer(),
+                        // HIDE SELECTED BUTTON
                         ElevatedButton.icon(
                           onPressed: _isBulkUpdating ? null : () => _bulkUpdateSongs(false),
                           icon: const Icon(Icons.visibility_off, size: 18),
@@ -447,6 +449,7 @@ class _SongsScreenState extends State<SongsScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
+                        // UNHIDE SELECTED BUTTON
                         ElevatedButton.icon(
                           onPressed: _isBulkUpdating ? null : () => _bulkUpdateSongs(true),
                           icon: const Icon(Icons.visibility, size: 18),
@@ -458,6 +461,7 @@ class _SongsScreenState extends State<SongsScreen> {
                           ),
                         ),
                         const SizedBox(width: 8),
+                        // CLEAR SELECTION BUTTON
                         IconButton(
                           onPressed: () {
                             setState(() {
@@ -471,7 +475,7 @@ class _SongsScreenState extends State<SongsScreen> {
                     ),
                   ),
                 
-                // 4. Song List
+                // 4. Song List (Expanded takes remaining space)
                 Expanded(
                   child: ListView.builder(
                     itemCount: _filteredSongs.length,
