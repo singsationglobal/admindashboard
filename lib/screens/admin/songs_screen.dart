@@ -19,7 +19,6 @@ class _SongsScreenState extends State<SongsScreen> {
   int _totalElements = 0;
   bool _isLoading = true;
   
-  // NEW: Bulk selection state
   Set<int> _selectedSongIds = {};
   bool _isBulkUpdating = false;
 
@@ -211,9 +210,6 @@ class _SongsScreenState extends State<SongsScreen> {
     }
   }
 
-  // ============================================================================
-  // NEW: BULK UPDATE METHOD
-  // ============================================================================
   Future<void> _bulkUpdateSongs(bool makeActive) async {
     if (_selectedSongIds.isEmpty) return;
     
@@ -235,36 +231,38 @@ class _SongsScreenState extends State<SongsScreen> {
 
     if (confirm == true) {
       setState(() => _isBulkUpdating = true);
-      int successCount = 0;
-      final idsToUpdate = List<int>.from(_selectedSongIds); // Copy to avoid concurrent modification
       
-      for (var id in idsToUpdate) {
-        try {
-          if (makeActive) {
-            await AdminApiService.unhideSong(id);
-          } else {
-            await AdminApiService.hideSong(id);
-          }
-          successCount++;
-        } catch (e) {
-          print('Failed to update song $id: $e');
+      try {
+        final idsToUpdate = List<int>.from(_selectedSongIds);
+        
+        if (makeActive) {
+          await AdminApiService.unhideSongsBulk(idsToUpdate);
+        } else {
+          await AdminApiService.hideSongsBulk(idsToUpdate);
         }
+        
+        setState(() {
+          _isBulkUpdating = false;
+          _selectedSongIds.clear();
+        });
+        
+        _loadSongs();
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Successfully updated ${idsToUpdate.length} songs.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } catch (e) {
+        setState(() => _isBulkUpdating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to update songs: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
-      
-      final totalSelected = idsToUpdate.length;
-      setState(() {
-        _isBulkUpdating = false;
-        _selectedSongIds.clear();
-      });
-      
-      _loadSongs(); // Reload to reflect changes
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Successfully updated $successCount out of $totalSelected songs.'),
-          backgroundColor: successCount > 0 ? Colors.green : Colors.red,
-        ),
-      );
     }
   }
 
