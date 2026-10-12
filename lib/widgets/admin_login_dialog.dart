@@ -13,7 +13,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
   final _password = TextEditingController();
   bool _loading = false;
   bool _obscure = true;
-  bool _rememberMe = false; // Added for Remember Me functionality
+  bool _rememberMe = false; 
 
   @override
   void dispose() {
@@ -56,8 +56,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.lock_outline,
-                color: Color(0xFFFDB400), size: 48),
+            const Icon(Icons.lock_outline, color: Color(0xFFFDB400), size: 48),
             const SizedBox(height: 12),
             const Text(
               'STAFF ACCESS',
@@ -70,35 +69,49 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
             ),
             const SizedBox(height: 24),
             
-            // FIX 1: AutofillGroup triggers browser/PC password managers to save credentials
             AutofillGroup(
               child: Column(
                 children: [
+                  // ─── EMAIL FIELD (Black text on White background) ───
                   TextField(
                     controller: _email,
                     autofillHints: const [AutofillHints.username],
-                    style: const TextStyle(color: Colors.white),
-                    decoration: const InputDecoration(
-                      hintText: 'Email',
-                      hintStyle: TextStyle(color: Colors.white54),
-                      prefixIcon: Icon(Icons.email, color: Colors.white54),
-                    ),
                     keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
+                    decoration: const InputDecoration(
+                      hintText: 'Email Address',
+                      hintStyle: TextStyle(color: Colors.black54),
+                      prefixIcon: Icon(Icons.email, color: Colors.black54),
+                      filled: true,
+                      fillColor: Colors.white, // GUARANTEE: White background so black text is visible
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 12),
+                  
+                  // ─── PASSWORD FIELD (Black text on White background + Eye Icon) ───
                   TextField(
                     controller: _password,
                     autofillHints: const [AutofillHints.password],
                     obscureText: _obscure,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: Colors.black, fontWeight: FontWeight.w500),
                     decoration: InputDecoration(
                       hintText: 'Password',
-                      hintStyle: const TextStyle(color: Colors.white54),
-                      prefixIcon: const Icon(Icons.key, color: Colors.white54),
+                      hintStyle: const TextStyle(color: Colors.black54),
+                      prefixIcon: const Icon(Icons.lock, color: Colors.black54),
+                      filled: true,
+                      fillColor: Colors.white, // GUARANTEE: White background so black text is visible
+                      border: const OutlineInputBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                        borderSide: BorderSide.none,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscure ? Icons.visibility_off : Icons.visibility,
-                          color: Colors.white54,
+                          color: Colors.black54, // Eye icon matches the dark text theme
                         ),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
@@ -110,7 +123,7 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
             
             const SizedBox(height: 12),
             
-            // FIX 2: Remember Me Checkbox
+            // ─── REMEMBER ME CHECKBOX ───
             Row(
               children: [
                 Checkbox(
@@ -139,6 +152,9 @@ class _AdminLoginDialogState extends State<AdminLoginDialog> {
                   backgroundColor: const Color(0xFFFDB400),
                   foregroundColor: Colors.black,
                   padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
                 child: _loading
                     ? const SizedBox(
