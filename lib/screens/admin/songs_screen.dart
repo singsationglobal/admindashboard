@@ -368,7 +368,7 @@ class _SongsScreenState extends State<SongsScreen> {
             )
           : Column(
               children: [
-                // Search Bar
+                // 1. Search Bar
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: TextField(
@@ -394,14 +394,14 @@ class _SongsScreenState extends State<SongsScreen> {
                   ),
                 ),
                 
-                // Bulk Action Bar
+                // 2. Select All Bar
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   color: AdminTheme.surface.withOpacity(0.5),
                   child: Row(
                     children: [
                       Checkbox(
-                        value: _filteredSongs.isNotEmpty && _selectedSongIds.length == _filteredSongs.length && _filteredSongs.isNotEmpty,
+                        value: _filteredSongs.isNotEmpty && _selectedSongIds.length == _filteredSongs.length,
                         tristate: true,
                         onChanged: (bool? value) {
                           setState(() {
@@ -420,7 +420,7 @@ class _SongsScreenState extends State<SongsScreen> {
                   ),
                 ),
                 
-                // Bulk Action Buttons - Shows when songs are selected
+                // 3. Bulk Action Buttons (Shows ONLY when songs are selected)
                 if (_selectedSongIds.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -471,7 +471,7 @@ class _SongsScreenState extends State<SongsScreen> {
                     ),
                   ),
                 
-                // Song List
+                // 4. Song List
                 Expanded(
                   child: ListView.builder(
                     itemCount: _filteredSongs.length,
@@ -531,7 +531,7 @@ class _SongsScreenState extends State<SongsScreen> {
                   ),
                 ),
                 
-                // Pagination
+                // 5. Pagination
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
