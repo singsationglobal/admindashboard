@@ -77,31 +77,15 @@ class _WinnersScreenState extends State<WinnersScreen> {
       final data = await AdminApiService.getUsers(0, 100);
       final users = data['users'] as List<dynamic>;
       
-      // Filter by category based on age
       final filtered = users.where((user) {
         final name = (user['name'] ?? '').toLowerCase();
         final surname = (user['surname'] ?? '').toLowerCase();
         final userid = (user['userid'] ?? '').toLowerCase();
-        final age = user['age'] ?? 0;
         final searchLower = query.toLowerCase();
         
-        // Check if user matches the search query (name, surname, or userid)
-        final matchesSearch = name.contains(searchLower) || 
-                             surname.contains(searchLower) || 
-                             userid.contains(searchLower);
-        
-        if (!matchesSearch) return false;
-        
-        // Filter by category based on age
-        if (_selectedCategory == 'ADULTS') {
-          return age >= 18;
-        } else if (_selectedCategory == 'CHILDREN') {
-          return age >= 6 && age <= 17;
-        } else if (_selectedCategory == 'CELEBRITY') {
-          return age >= 0; // Celebrities can be any age
-        }
-        
-        return true;
+        return name.contains(searchLower) || 
+               surname.contains(searchLower) || 
+               userid.contains(searchLower);
       }).toList();
       
       setState(() {
@@ -124,7 +108,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
       _userSearchController.clear();
     });
     
-    // Show success feedback
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('User details filled: ${user['name']} ${user['surname']}'),
@@ -248,8 +231,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
               labelText: 'Search User',
               hintText: 'Type name or User ID...',
               prefixIcon: Icon(Icons.search),
-              helperText: 'Search by name or User ID to auto-fill',
-              helperStyle: TextStyle(fontSize: 11, color: Colors.grey),
             ),
             onChanged: _searchUsers,
           ),
@@ -258,9 +239,9 @@ class _WinnersScreenState extends State<WinnersScreen> {
             Container(
               constraints: const BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(
-                color: AdminTheme.surface,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AdminTheme.primary),
+                border: Border.all(color: Colors.purple),
               ),
               child: ListView.builder(
                 shrinkWrap: true,
@@ -270,7 +251,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
                   final fullName = '${user['name'] ?? ''} ${user['surname'] ?? ''}'.trim();
                   return ListTile(
                     leading: const CircleAvatar(
-                      backgroundColor: AdminTheme.primary,
+                      backgroundColor: Colors.purple,
                       child: Icon(Icons.person, color: Colors.white, size: 20),
                     ),
                     title: Text(fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -298,41 +279,38 @@ class _WinnersScreenState extends State<WinnersScreen> {
             ],
             onChanged: (value) {
               setState(() => _selectedCategory = value ?? 'ADULTS');
-              // Clear search when category changes
-              _searchedUsers.clear();
-              _userSearchController.clear();
             },
             validator: (v) => v == null ? 'Required' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _winnerNameController,
-            decoration: const InputDecoration(labelText: 'Winner Name *', hintText: 'Full name'),
+            decoration: const InputDecoration(labelText: 'Winner Name *'),
             validator: (v) => v == null || v.isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _winnerUseridController,
-            decoration: const InputDecoration(labelText: 'Winner User ID *', hintText: 'Unique ID'),
+            decoration: const InputDecoration(labelText: 'Winner User ID *'),
             validator: (v) => v == null || v.isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _winnerAgeController,
-            decoration: const InputDecoration(labelText: 'Winner Age *', hintText: 'Age in years'),
+            decoration: const InputDecoration(labelText: 'Winner Age *'),
             keyboardType: TextInputType.number,
             validator: (v) => v == null || v.isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _provinceController,
-            decoration: const InputDecoration(labelText: 'Province *', hintText: 'e.g., Western Cape, Gauteng'),
+            decoration: const InputDecoration(labelText: 'Province *'),
             validator: (v) => v == null || v.isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _messageController,
-            decoration: const InputDecoration(labelText: 'Message (Optional)', hintText: 'Congratulations message'),
+            decoration: const InputDecoration(labelText: 'Message (Optional)'),
             maxLines: 3,
           ),
         ],
