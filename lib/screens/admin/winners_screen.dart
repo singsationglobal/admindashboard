@@ -20,14 +20,16 @@ class _WinnersScreenState extends State<WinnersScreen> {
   String _userRole = '';
   final _formKey = GlobalKey<FormState>();
   String _selectedCategory = 'ADULTS';
+  
   final _winnerNameController = TextEditingController();
   final _winnerUseridController = TextEditingController();
   final _winnerAgeController = TextEditingController();
   final _provinceController = TextEditingController();
   final _messageController = TextEditingController();
+  
   int? _editingWinnerId;
   
-  // Search functionality
+  // Search & Auto-fill variables
   final _searchController = TextEditingController();
   List<dynamic> _allUsers = [];
   List<dynamic> _filteredUsers = [];
@@ -38,7 +40,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
     super.initState();
     _loadUserRole();
     _loadWinners();
-    _loadAllUsers();
+    _loadAllUsers(); // Pre-load users for instant search
   }
 
   @override
@@ -78,30 +80,28 @@ class _WinnersScreenState extends State<WinnersScreen> {
     }
   }
 
-  // Load ALL users once when screen opens
+  // Pre-load ALL users so search is instant and doesn't rely on typing triggers
   Future<void> _loadAllUsers() async {
     try {
-      print('DEBUG: Loading all users...');
+      print('DEBUG: Loading all users for search...');
       final data = await AdminApiService.getUsers(0, 1000);
       if (data['users'] != null && data['users'] is List) {
         setState(() {
           _allUsers = data['users'];
           _usersLoaded = true;
         });
-        print('DEBUG: Loaded ${_allUsers.length} users');
+        print('DEBUG: Successfully loaded ${_allUsers.length} users');
       }
     } catch (e) {
       print('DEBUG: Failed to load users: $e');
     }
   }
 
-  // Filter users as user types
+  // Filter users as you type
   void _filterUsers(String query) {
     print('DEBUG: Filtering users with query: "$query"');
     if (query.isEmpty) {
-      setState(() {
-        _filteredUsers = [];
-      });
+      setState(() => _filteredUsers = []);
       return;
     }
     
@@ -109,7 +109,8 @@ class _WinnersScreenState extends State<WinnersScreen> {
     final filtered = _allUsers.where((user) {
       final name = (user['name'] ?? '').toLowerCase();
       final surname = (user['surname'] ?? '').toLowerCase();
-      final userid = (user['userid'] ?? '').toLowerCase();
+      // Check both 'userid' and 'userId' to be safe with Java/Spring Boot JSON mapping
+      final userid = (user['userid'] ?? user['userId'] ?? '').toLowerCase();
       final email = (user['email'] ?? '').toLowerCase();
       
       return name.contains(queryLower) || 
@@ -125,21 +126,26 @@ class _WinnersScreenState extends State<WinnersScreen> {
     });
   }
 
-  // Auto-fill form when user is selected
+  // Auto-fill form when a user is selected from the dropdown
   void _selectUser(Map<String, dynamic> user) {
     print('DEBUG: Selecting user: ${user['name']} ${user['surname']}');
     setState(() {
       _winnerNameController.text = '${user['name'] ?? ''} ${user['surname'] ?? ''}'.trim();
-      _winnerUseridController.text = user['userid'] ?? '';
-      _winnerAgeController.text = (user['age'] ?? 0).toString();
+      // Check both 'userid' and 'userId'
+      _winnerUseridController.text = user['userid'] ?? user['userId'] ?? '';
+      // Handle null age safely
+      final age = user['age'];
+      _winnerAgeController.text = (age != null && age is int) ? age.toString() : (age?.toString() ?? '0');
       _provinceController.text = user['province'] ?? '';
+      
+      // Clear search after selection
       _searchController.clear();
       _filteredUsers = [];
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('✅ Selected: ${user['name']} ${user['surname']}'),
+        content: Text('✅ Auto-filled: ${user['name']} ${user['surname']}'),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
       ),
@@ -248,7 +254,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
     _editingWinnerId = winner['id'];
     _selectedCategory = winner['category'] ?? 'ADULTS';
     _winnerNameController.text = winner['winnerName'] ?? '';
-    _winnerUseridController.text = winner['winnerUserid'] ?? '';
+    _winnerUseridController.text = winner['winnerUserid'] ?? winner['winnerUserId'] ?? '';
     _winnerAgeController.text = (winner['winnerAge'] ?? 0).toString();
     _provinceController.text = winner['province'] ?? '';
     _messageController.text = winner['message'] ?? '';
@@ -271,7 +277,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // SEARCH FIELD
+          // 1. SEARCH FIELD
           TextField(
             controller: _searchController,
             decoration: const InputDecoration(
@@ -285,14 +291,14 @@ class _WinnersScreenState extends State<WinnersScreen> {
           ),
           const SizedBox(height: 8),
           
-          // SEARCH RESULTS DROPDOWN
+          // 2. HIGHLY VISIBLE SEARCH RESULTS DROPDOWN
           if (_filteredUsers.isNotEmpty)
             Container(
               constraints: const BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: Colors.white, // Solid white background
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.purple, width: 2),
+                border: Border.all(color: Colors.purple, width: 2), // Thick purple border
                 boxShadow: [
                   BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, 2)),
                 ],
@@ -303,6 +309,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
                 itemBuilder: (context, index) {
                   final user = _filteredUsers[index];
                   final fullName = '${user['name'] ?? ''} ${user['surname'] ?? ''}'.trim();
+                  final userId = user['userid'] ?? user['userId'] ?? 'N/A';
                   return ListTile(
                     leading: const CircleAvatar(
                       backgroundColor: Colors.purple,
@@ -312,7 +319,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('ID: ${user['userid'] ?? 'N/A'}', style: const TextStyle(color: Colors.black87)),
+                        Text('ID: $userId', style: const TextStyle(color: Colors.black87)),
                         Text('Age: ${user['age'] ?? 'N/A'} | Province: ${user['province'] ?? 'N/A'}', style: const TextStyle(color: Colors.black87)),
                       ],
                     ),
@@ -324,6 +331,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
           
           const SizedBox(height: 16),
           
+          // 3. CATEGORY DROPDOWN
           DropdownButtonFormField<String>(
             value: _selectedCategory,
             decoration: const InputDecoration(labelText: 'Category *', filled: true, fillColor: Colors.white),
@@ -339,6 +347,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
           ),
           const SizedBox(height: 12),
           
+          // 4. WINNER NAME
           TextFormField(
             controller: _winnerNameController,
             decoration: const InputDecoration(labelText: 'Winner Name *', filled: true, fillColor: Colors.white),
@@ -346,6 +355,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
           ),
           const SizedBox(height: 12),
           
+          // 5. WINNER USER ID
           TextFormField(
             controller: _winnerUseridController,
             decoration: const InputDecoration(labelText: 'Winner User ID *', filled: true, fillColor: Colors.white),
@@ -353,6 +363,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
           ),
           const SizedBox(height: 12),
           
+          // 6. WINNER AGE
           TextFormField(
             controller: _winnerAgeController,
             decoration: const InputDecoration(labelText: 'Winner Age *', filled: true, fillColor: Colors.white),
@@ -361,6 +372,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
           ),
           const SizedBox(height: 12),
           
+          // 7. PROVINCE
           TextFormField(
             controller: _provinceController,
             decoration: const InputDecoration(labelText: 'Province *', filled: true, fillColor: Colors.white),
@@ -368,6 +380,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
           ),
           const SizedBox(height: 12),
           
+          // 8. MESSAGE
           TextFormField(
             controller: _messageController,
             decoration: const InputDecoration(labelText: 'Message (Optional)', filled: true, fillColor: Colors.white),
