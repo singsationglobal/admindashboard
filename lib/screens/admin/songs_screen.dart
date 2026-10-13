@@ -349,15 +349,6 @@ class _SongsScreenState extends State<SongsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Determine the state of the selected songs to toggle the single button
-    final selectedSongs = _filteredSongs.where((s) => _selectedSongIds.contains(s['id'])).toList();
-    final allActive = selectedSongs.isNotEmpty && selectedSongs.every((s) => s['active'] == true);
-    
-    final toggleIcon = allActive ? Icons.visibility_off : Icons.visibility;
-    final toggleColor = allActive ? Colors.orange : Colors.green;
-    final toggleLabel = allActive ? 'HIDE SELECTED' : 'UNHIDE SELECTED';
-    final toggleAction = () => _bulkUpdateSongs(!allActive);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Song Management'),
@@ -377,7 +368,6 @@ class _SongsScreenState extends State<SongsScreen> {
             )
           : Column(
               children: [
-                // 1. Search Bar
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: TextField(
@@ -403,7 +393,6 @@ class _SongsScreenState extends State<SongsScreen> {
                   ),
                 ),
                 
-                // 2. Select All Bar
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   color: AdminTheme.surface.withOpacity(0.5),
@@ -429,10 +418,8 @@ class _SongsScreenState extends State<SongsScreen> {
                   ),
                 ),
                 
-                // 3. SINGLE SMART TOGGLE BUTTON (Replaces the two separate buttons)
                 if (_selectedSongIds.isNotEmpty)
                   Container(
-                    width: double.infinity,
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     color: Colors.blue.withOpacity(0.2),
                     child: Row(
@@ -446,24 +433,18 @@ class _SongsScreenState extends State<SongsScreen> {
                           ),
                         ),
                         const Spacer(),
-                        
-                        // THE SINGLE TOGGLE BUTTON
-                        ElevatedButton.icon(
-                          onPressed: toggleAction,
-                          icon: Icon(toggleIcon, color: Colors.white, size: 20),
-                          label: Text(
-                            toggleLabel,
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: toggleColor,
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          ),
+                        IconButton(
+                          icon: const Icon(Icons.visibility_off, color: Colors.orange, size: 28),
+                          tooltip: 'Hide Selected',
+                          onPressed: () => _bulkUpdateSongs(false),
                         ),
-                        
-                        const SizedBox(width: 12),
-                        
-                        // CLEAR SELECTION
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.visibility, color: Colors.green, size: 28),
+                          tooltip: 'Unhide Selected',
+                          onPressed: () => _bulkUpdateSongs(true),
+                        ),
+                        const SizedBox(width: 8),
                         IconButton(
                           icon: const Icon(Icons.clear, color: Colors.white70, size: 28),
                           tooltip: 'Clear Selection',
@@ -477,7 +458,6 @@ class _SongsScreenState extends State<SongsScreen> {
                     ),
                   ),
                 
-                // 4. Song List (Expanded takes the remaining space)
                 Expanded(
                   child: ListView.builder(
                     itemCount: _filteredSongs.length,
@@ -537,7 +517,6 @@ class _SongsScreenState extends State<SongsScreen> {
                   ),
                 ),
                 
-                // 5. Pagination
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
