@@ -20,26 +20,25 @@ class _WinnersScreenState extends State<WinnersScreen> {
   String _userRole = '';
   final _formKey = GlobalKey<FormState>();
   String _selectedCategory = 'ADULTS';
-  
   final _winnerNameController = TextEditingController();
   final _winnerUseridController = TextEditingController();
   final _winnerAgeController = TextEditingController();
   final _provinceController = TextEditingController();
   final _messageController = TextEditingController();
-  
   int? _editingWinnerId;
   
-  final _userSearchController = TextEditingController();
-  List<dynamic> _searchedUsers = [];
-  bool _isSearchingUsers = false;
+  // Search functionality
+  final _searchController = TextEditingController();
+  List<dynamic> _allUsers = [];
+  List<dynamic> _filteredUsers = [];
+  bool _usersLoaded = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserRole();
     _loadWinners();
-    // Pre-load users so search is instant
-    _preloadUsers();
+    _loadAllUsers();
   }
 
   @override
@@ -49,7 +48,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
     _winnerAgeController.dispose();
     _provinceController.dispose();
     _messageController.dispose();
-    _userSearchController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -79,80 +78,68 @@ class _WinnersScreenState extends State<WinnersScreen> {
     }
   }
 
-  // Pre-load users to make search instant and reliable
-  List<dynamic> _allUsers = [];
-  Future<void> _preloadUsers() async {
+  // Load ALL users once when screen opens
+  Future<void> _loadAllUsers() async {
     try {
-      final data = await AdminApiService.getUsers(0, 500);
-      if (data['users'] is List) {
-        _allUsers = data['users'];
-        print('DEBUG: Pre-loaded ${_allUsers.length} users');
+      print('DEBUG: Loading all users...');
+      final data = await AdminApiService.getUsers(0, 1000);
+      if (data['users'] != null && data['users'] is List) {
+        setState(() {
+          _allUsers = data['users'];
+          _usersLoaded = true;
+        });
+        print('DEBUG: Loaded ${_allUsers.length} users');
       }
     } catch (e) {
-      print('DEBUG: Failed to preload users: $e');
+      print('DEBUG: Failed to load users: $e');
     }
   }
 
-  Future<void> _searchUsers(String query) async {
-    print('DEBUG: Searching for: "$query"');
+  // Filter users as user types
+  void _filterUsers(String query) {
+    print('DEBUG: Filtering users with query: "$query"');
     if (query.isEmpty) {
-      if (mounted) setState(() => _searchedUsers = []);
+      setState(() {
+        _filteredUsers = [];
+      });
       return;
     }
     
-    if (mounted) setState(() => _isSearchingUsers = true);
-    
-    try {
-      // Use pre-loaded users for instant response, or fetch if empty
-      List<dynamic> usersToSearch = _allUsers;
-      if (usersToSearch.isEmpty) {
-        final data = await AdminApiService.getUsers(0, 500);
-        if (data['users'] is List) {
-          usersToSearch = data['users'];
-          _allUsers = usersToSearch;
-        }
-      }
-
-      final searchLower = query.toLowerCase();
-      final filtered = usersToSearch.where((user) {
-        final name = (user['name'] ?? '').toLowerCase();
-        final surname = (user['surname'] ?? '').toLowerCase();
-        final userid = (user['userid'] ?? '').toLowerCase();
-        return name.contains(searchLower) || surname.contains(searchLower) || userid.contains(searchLower);
-      }).toList();
-
-      print('DEBUG: Found ${filtered.length} matching users');
+    final queryLower = query.toLowerCase();
+    final filtered = _allUsers.where((user) {
+      final name = (user['name'] ?? '').toLowerCase();
+      final surname = (user['surname'] ?? '').toLowerCase();
+      final userid = (user['userid'] ?? '').toLowerCase();
+      final email = (user['email'] ?? '').toLowerCase();
       
-      if (mounted) {
-        setState(() {
-          _searchedUsers = filtered;
-          _isSearchingUsers = false;
-        });
-      }
-    } catch (e) {
-      print('DEBUG: Failed to search users: $e');
-      if (mounted) {
-        setState(() => _isSearchingUsers = false);
-      }
-    }
+      return name.contains(queryLower) || 
+             surname.contains(queryLower) || 
+             userid.contains(queryLower) ||
+             email.contains(queryLower);
+    }).toList();
+    
+    print('DEBUG: Found ${filtered.length} matching users');
+    
+    setState(() {
+      _filteredUsers = filtered;
+    });
   }
 
-  void _autoFillUserData(Map<String, dynamic> user) {
-    print('DEBUG: Auto-filling with user: ${user['name']} ${user['surname']}');
+  // Auto-fill form when user is selected
+  void _selectUser(Map<String, dynamic> user) {
+    print('DEBUG: Selecting user: ${user['name']} ${user['surname']}');
     setState(() {
       _winnerNameController.text = '${user['name'] ?? ''} ${user['surname'] ?? ''}'.trim();
       _winnerUseridController.text = user['userid'] ?? '';
       _winnerAgeController.text = (user['age'] ?? 0).toString();
       _provinceController.text = user['province'] ?? '';
-      
-      // Clear search after selection
-      _searchedUsers = [];
-      _userSearchController.clear();
+      _searchController.clear();
+      _filteredUsers = [];
     });
     
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('✅ Auto-filled: ${user['name']} ${user['surname']}'),
+        content: Text('✅ Selected: ${user['name']} ${user['surname']}'),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
       ),
@@ -177,12 +164,10 @@ class _WinnersScreenState extends State<WinnersScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Winner announced successfully!'), backgroundColor: Colors.green)
         );
-        print('DEBUG: Winner announced successfully');
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Failed to announce winner: $e'), backgroundColor: Colors.red)
         );
-        print('DEBUG: Failed to announce winner: $e');
       }
     }
   }
@@ -232,7 +217,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Winner'),
-        content: Text('Are you sure you want to delete "$winnerName"? This will remove it from all users\' apps.'),
+        content: Text('Are you sure you want to delete "$winnerName"?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
           ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('DELETE')),
@@ -288,37 +273,35 @@ class _WinnersScreenState extends State<WinnersScreen> {
         children: [
           // SEARCH FIELD
           TextField(
-            controller: _userSearchController,
+            controller: _searchController,
             decoration: const InputDecoration(
               labelText: 'Search User (Name or ID)',
-              hintText: 'Type name or User ID to auto-fill...',
+              hintText: 'Start typing to search...',
               prefixIcon: Icon(Icons.search),
               filled: true,
               fillColor: Colors.white,
             ),
-            onChanged: _searchUsers,
+            onChanged: _filterUsers,
           ),
           const SizedBox(height: 8),
           
-          // SEARCH RESULTS DROPDOWN (Highly Visible)
-          if (_isSearchingUsers)
-            const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator())
-          else if (_searchedUsers.isNotEmpty)
+          // SEARCH RESULTS DROPDOWN
+          if (_filteredUsers.isNotEmpty)
             Container(
               constraints: const BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(
-                color: Colors.white, // Explicit white background
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.purple, width: 2), // Highly visible border
+                border: Border.all(color: Colors.purple, width: 2),
                 boxShadow: [
                   BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, 2)),
                 ],
               ),
               child: ListView.builder(
                 shrinkWrap: true,
-                itemCount: _searchedUsers.length > 5 ? 5 : _searchedUsers.length,
+                itemCount: _filteredUsers.length > 5 ? 5 : _filteredUsers.length,
                 itemBuilder: (context, index) {
-                  final user = _searchedUsers[index];
+                  final user = _filteredUsers[index];
                   final fullName = '${user['name'] ?? ''} ${user['surname'] ?? ''}'.trim();
                   return ListTile(
                     leading: const CircleAvatar(
@@ -333,15 +316,12 @@ class _WinnersScreenState extends State<WinnersScreen> {
                         Text('Age: ${user['age'] ?? 'N/A'} | Province: ${user['province'] ?? 'N/A'}', style: const TextStyle(color: Colors.black87)),
                       ],
                     ),
-                    onTap: () {
-                      print('DEBUG: Tapped user to auto-fill: $user');
-                      _autoFillUserData(user);
-                    },
+                    onTap: () => _selectUser(user),
                   );
                 },
               ),
             ),
-            
+          
           const SizedBox(height: 16),
           
           DropdownButtonFormField<String>(
@@ -354,8 +334,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
             ],
             onChanged: (value) {
               setState(() => _selectedCategory = value ?? 'ADULTS');
-              _searchedUsers.clear();
-              _userSearchController.clear();
             },
             validator: (v) => v == null ? 'Required' : null,
           ),
@@ -408,8 +386,8 @@ class _WinnersScreenState extends State<WinnersScreen> {
     _winnerAgeController.clear();
     _provinceController.clear();
     _messageController.clear();
-    _userSearchController.clear();
-    _searchedUsers = [];
+    _searchController.clear();
+    _filteredUsers = [];
   }
 
   void _showAnnounceDialog() {
