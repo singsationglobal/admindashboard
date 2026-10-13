@@ -1,4 +1,4 @@
-import 'dart:convert'; // <-- ADDED THIS LINE
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
@@ -74,15 +74,36 @@ class _WinnersScreenState extends State<WinnersScreen> {
     }
     setState(() => _isSearchingUsers = true);
     try {
-      final data = await AdminApiService.getUsers(0, 50);
+      final data = await AdminApiService.getUsers(0, 100);
       final users = data['users'] as List<dynamic>;
+      
+      // Filter by category based on age
       final filtered = users.where((user) {
         final name = (user['name'] ?? '').toLowerCase();
         final surname = (user['surname'] ?? '').toLowerCase();
         final userid = (user['userid'] ?? '').toLowerCase();
+        final age = user['age'] ?? 0;
         final searchLower = query.toLowerCase();
-        return name.contains(searchLower) || surname.contains(searchLower) || userid.contains(searchLower);
+        
+        // Check if user matches the search query (name, surname, or userid)
+        final matchesSearch = name.contains(searchLower) || 
+                             surname.contains(searchLower) || 
+                             userid.contains(searchLower);
+        
+        if (!matchesSearch) return false;
+        
+        // Filter by category based on age
+        if (_selectedCategory == 'ADULTS') {
+          return age >= 18;
+        } else if (_selectedCategory == 'CHILDREN') {
+          return age >= 6 && age <= 17;
+        } else if (_selectedCategory == 'CELEBRITY') {
+          return age >= 0; // Celebrities can be any age
+        }
+        
+        return true;
       }).toList();
+      
       setState(() {
         _searchedUsers = filtered;
         _isSearchingUsers = false;
@@ -102,6 +123,15 @@ class _WinnersScreenState extends State<WinnersScreen> {
       _searchedUsers = [];
       _userSearchController.clear();
     });
+    
+    // Show success feedback
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('User details filled: ${user['name']} ${user['surname']}'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
   }
 
   Future<void> _announceWinner() async {
@@ -140,7 +170,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
         final response = await http.put(
           Uri.parse('${ApiConfig.baseUrl}/admin/winners/${_editingWinnerId}'), 
           headers: await AdminApiService.getAuthHeader(), 
-          body: json.encode(winnerData) // Now 'json' is recognized!
+          body: json.encode(winnerData)
         );
         if (response.statusCode == 200) {
           _clearForm();
@@ -212,34 +242,99 @@ class _WinnersScreenState extends State<WinnersScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          TextField(controller: _userSearchController, decoration: const InputDecoration(labelText: 'Search User (Name or ID)', hintText: 'Type to search...', prefixIcon: Icon(Icons.search)), onChanged: _searchUsers),
+          TextField(
+            controller: _userSearchController,
+            decoration: const InputDecoration(
+              labelText: 'Search User',
+              hintText: 'Type name or User ID...',
+              prefixIcon: Icon(Icons.search),
+              helperText: 'Search by name or User ID to auto-fill',
+              helperStyle: TextStyle(fontSize: 11, color: Colors.grey),
+            ),
+            onChanged: _searchUsers,
+          ),
           const SizedBox(height: 8),
           if (_searchedUsers.isNotEmpty)
             Container(
               constraints: const BoxConstraints(maxHeight: 200),
-              decoration: BoxDecoration(color: AdminTheme.surface, borderRadius: BorderRadius.circular(8), border: Border.all(color: AdminTheme.primary)),
+              decoration: BoxDecoration(
+                color: AdminTheme.surface,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: AdminTheme.primary),
+              ),
               child: ListView.builder(
                 shrinkWrap: true,
                 itemCount: _searchedUsers.length > 5 ? 5 : _searchedUsers.length,
                 itemBuilder: (context, index) {
                   final user = _searchedUsers[index];
-                  return ListTile(title: Text('${user['name']} ${user['surname'] ?? ''}'), subtitle: Text('ID: ${user['userid']} | Age: ${user['age'] ?? 'N/A'}'), onTap: () => _autoFillUserData(user));
+                  final fullName = '${user['name'] ?? ''} ${user['surname'] ?? ''}'.trim();
+                  return ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: AdminTheme.primary,
+                      child: Icon(Icons.person, color: Colors.white, size: 20),
+                    ),
+                    title: Text(fullName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('ID: ${user['userid'] ?? 'N/A'}'),
+                        Text('Age: ${user['age'] ?? 'N/A'} | Province: ${user['province'] ?? 'N/A'}'),
+                      ],
+                    ),
+                    onTap: () => _autoFillUserData(user),
+                  );
                 },
               ),
             ),
           if (_isSearchingUsers) const Padding(padding: EdgeInsets.all(8.0), child: CircularProgressIndicator()),
           const SizedBox(height: 16),
-          DropdownButtonFormField<String>(value: _selectedCategory, decoration: const InputDecoration(labelText: 'Category'), items: const [DropdownMenuItem(value: 'ADULTS', child: Text('Adults')), DropdownMenuItem(value: 'CHILDREN', child: Text('Children')), DropdownMenuItem(value: 'CELEBRITY', child: Text('Celebrity'))], onChanged: (value) => setState(() => _selectedCategory = value ?? 'ADULTS'), validator: (v) => v == null ? 'Required' : null),
+          DropdownButtonFormField<String>(
+            value: _selectedCategory,
+            decoration: const InputDecoration(labelText: 'Category *'),
+            items: const [
+              DropdownMenuItem(value: 'ADULTS', child: Text('Adults (18+)')),
+              DropdownMenuItem(value: 'CHILDREN', child: Text('Children (6-17)')),
+              DropdownMenuItem(value: 'CELEBRITY', child: Text('Celebrity')),
+            ],
+            onChanged: (value) {
+              setState(() => _selectedCategory = value ?? 'ADULTS');
+              // Clear search when category changes
+              _searchedUsers.clear();
+              _userSearchController.clear();
+            },
+            validator: (v) => v == null ? 'Required' : null,
+          ),
           const SizedBox(height: 12),
-          TextFormField(controller: _winnerNameController, decoration: const InputDecoration(labelText: 'Winner Name'), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+          TextFormField(
+            controller: _winnerNameController,
+            decoration: const InputDecoration(labelText: 'Winner Name *', hintText: 'Full name'),
+            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+          ),
           const SizedBox(height: 12),
-          TextFormField(controller: _winnerUseridController, decoration: const InputDecoration(labelText: 'Winner User ID'), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+          TextFormField(
+            controller: _winnerUseridController,
+            decoration: const InputDecoration(labelText: 'Winner User ID *', hintText: 'Unique ID'),
+            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+          ),
           const SizedBox(height: 12),
-          TextFormField(controller: _winnerAgeController, decoration: const InputDecoration(labelText: 'Winner Age'), keyboardType: TextInputType.number, validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+          TextFormField(
+            controller: _winnerAgeController,
+            decoration: const InputDecoration(labelText: 'Winner Age *', hintText: 'Age in years'),
+            keyboardType: TextInputType.number,
+            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+          ),
           const SizedBox(height: 12),
-          TextFormField(controller: _provinceController, decoration: const InputDecoration(labelText: 'Province'), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+          TextFormField(
+            controller: _provinceController,
+            decoration: const InputDecoration(labelText: 'Province *', hintText: 'e.g., Western Cape, Gauteng'),
+            validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+          ),
           const SizedBox(height: 12),
-          TextFormField(controller: _messageController, decoration: const InputDecoration(labelText: 'Message (Optional)'), maxLines: 3),
+          TextFormField(
+            controller: _messageController,
+            decoration: const InputDecoration(labelText: 'Message (Optional)', hintText: 'Congratulations message'),
+            maxLines: 3,
+          ),
         ],
       ),
     );
@@ -303,7 +398,14 @@ class _WinnersScreenState extends State<WinnersScreen> {
                           children: [
                             Row(
                               children: [
-                                Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: winner['category'] == 'CELEBRITY' ? Colors.amber : AdminTheme.primary, borderRadius: BorderRadius.circular(20)), child: Text(winner['category'] ?? 'Unknown', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: winner['category'] == 'CELEBRITY' ? Colors.amber : AdminTheme.primary,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Text(winner['category'] ?? 'Unknown', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                ),
                                 const Spacer(),
                                 Text(DateFormat('dd MMM yyyy').format(DateTime.parse(winner['announcedAt'])), style: TextStyle(color: Colors.grey[500], fontSize: 12)),
                                 if (canModify) IconButton(icon: const Icon(Icons.edit, color: Colors.blue, size: 20), onPressed: () => _editWinner(winner), tooltip: 'Edit Winner', padding: EdgeInsets.zero, constraints: const BoxConstraints()),
@@ -314,7 +416,11 @@ class _WinnersScreenState extends State<WinnersScreen> {
                             Text(winner['winnerName'] ?? 'Unknown', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
                             Text('User ID: ${winner['winnerUserid'] ?? 'N/A'}', style: TextStyle(color: Colors.grey[400])),
                             Text('Age: ${winner['winnerAge']} | Province: ${winner['province'] ?? 'N/A'}', style: TextStyle(color: Colors.grey[400])),
-                            if (winner['message'] != null && winner['message'].isNotEmpty) Padding(padding: const EdgeInsets.only(top: 8), child: Text(winner['message'], style: TextStyle(color: Colors.grey[300]))),
+                            if (winner['message'] != null && winner['message'].isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(winner['message'], style: TextStyle(color: Colors.grey[300], fontStyle: FontStyle.italic)),
+                              ),
                           ],
                         ),
                       ),
