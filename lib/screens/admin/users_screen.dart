@@ -156,18 +156,43 @@ class _UsersScreenState extends State<UsersScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // ✅ NEW: Large profile picture and name header
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  CircleAvatar(
+                    radius: 35,
+                    backgroundColor: AdminTheme.primary,
+                    backgroundImage: (user['profileImageUrl'] != null && 
+                                    user['profileImageUrl'].toString().isNotEmpty && 
+                                    user['profileImageUrl'] != 'null')
+                        ? NetworkImage(user['profileImageUrl'])
+                        : null,
+                    child: (user['profileImageUrl'] == null || 
+                            user['profileImageUrl'].toString().isEmpty || 
+                            user['profileImageUrl'] == 'null')
+                        ? Text(
+                            (user['name'] ?? '?').substring(0, 1).toUpperCase(), 
+                            style: const TextStyle(color: Colors.white, fontSize: 24)
+                          )
+                        : null,
+                  ),
+                  const SizedBox(width: 16),
                   Expanded(
-                    child: Text('${user['name'] ?? ''} ${user['surname'] ?? ''}', 
-                         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('${user['name'] ?? ''} ${user['surname'] ?? ''}', 
+                             style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
+                        const SizedBox(height: 4),
+                        Text('User ID: ${user['userid'] ?? 'N/A'}', style: TextStyle(color: Colors.grey[500], fontSize: 14)),
+                      ],
+                    ),
                   ),
                   IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
                 ],
               ),
-              const Divider(),
-              _buildDetailRow('User ID', user['userid'] ?? 'N/A'),
+              const Divider(height: 32),
               _buildDetailRow('Email', user['email'] ?? 'N/A'),
               _buildDetailRow('Contact', user['contact'] ?? 'N/A'),
               _buildDetailRow('Province', user['province'] ?? 'N/A'),
@@ -336,7 +361,6 @@ class _UsersScreenState extends State<UsersScreen> {
                             final user = _users[index];
                             final isActive = user['isActive'] ?? true;
                             
-                            // ✅ NEW: Check if profileImageUrl exists to display the image
                             final String? profileImageUrl = user['profileImageUrl'];
                             final bool hasImage = profileImageUrl != null && profileImageUrl.isNotEmpty;
 
