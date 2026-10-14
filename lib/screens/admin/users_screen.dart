@@ -128,9 +128,98 @@ class _UsersScreenState extends State<UsersScreen> {
     }
   }
 
+  // ✅ NEW: Show detailed user info + coin stats in a mobile-friendly bottom sheet
+  void _showUserDetails(dynamic user) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final int userId = user['id'] is int ? user['id'] : int.parse(user['id'].toString());
+      final coinStats = await AdminApiService.getUserCoinStats(userId);
+      
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) => Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: AdminTheme.surface,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text('${user['name'] ?? ''} ${user['surname'] ?? ''}', 
+                         style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
+                  ),
+                  IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(ctx)),
+                ],
+              ),
+              const Divider(),
+              _buildDetailRow('User ID', user['userid'] ?? 'N/A'),
+              _buildDetailRow('Email', user['email'] ?? 'N/A'),
+              _buildDetailRow('Contact', user['contact'] ?? 'N/A'),
+              _buildDetailRow('Province', user['province'] ?? 'N/A'),
+              _buildDetailRow('Age', user['age']?.toString() ?? 'N/A'),
+              const SizedBox(height: 16),
+              const Text('Coin & Voting Stats', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AdminTheme.primary)),
+              const SizedBox(height: 8),
+              _buildDetailRow('Current Balance', '${coinStats['currentBalance'] ?? 0} Coins', color: Colors.green),
+              _buildDetailRow('Total Bought', '${coinStats['totalCoinsBought'] ?? 0} Coins', color: Colors.blue),
+              _buildDetailRow('Total Spent (Voting)', '${coinStats['totalCoinsSpent'] ?? 0} Coins', color: Colors.orange),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _showMessageDialog(user);
+                  },
+                  icon: const Icon(Icons.message),
+                  label: const Text('Message User'),
+                  style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 14)),
+                ),
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      Navigator.pop(context); // Close loading
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load user details: $e')));
+    }
+  }
+
+  Widget _buildDetailRow(String label, String value, {Color? color}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+          Text(value, style: TextStyle(color: color ?? AdminTheme.textLight, fontWeight: FontWeight.bold, fontSize: 14)),
+        ],
+      ),
+    );
+  }
+
   void _showMessageDialog(dynamic user) {
     final messageController = TextEditingController();
-    String selectedType = 'SUPPORT'; // Default message type
+    String selectedType = 'SUPPORT';
 
     showDialog(
       context: context,
@@ -140,75 +229,45 @@ class _UsersScreenState extends State<UsersScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                'Send a message to ${user['name'] ?? ''} ${user['surname'] ?? ''}',
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
+              Text('Send a message to ${user['name'] ?? ''} ${user['surname'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 16),
-              
-              // NEW: Dropdown to categorize the message for the user's app
               DropdownButtonFormField<String>(
                 value: selectedType,
-                decoration: const InputDecoration(
-                  labelText: 'Message Category',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
+                decoration: const InputDecoration(labelText: 'Message Category', border: OutlineInputBorder(), filled: true, fillColor: Colors.white),
                 items: const [
                   DropdownMenuItem(value: 'SUPPORT', child: Text('Support')),
                   DropdownMenuItem(value: 'COMPLAINT', child: Text('Complaint')),
                   DropdownMenuItem(value: 'GENERAL', child: Text('General Announcement')),
                 ],
                 onChanged: (value) {
-                  if (value != null) {
-                    setStateDialog(() {
-                      selectedType = value;
-                    });
-                  }
+                  if (value != null) setStateDialog(() => selectedType = value);
                 },
               ),
-              
               const SizedBox(height: 16),
               TextField(
                 controller: messageController,
                 maxLines: 4,
-                decoration: const InputDecoration(
-                  hintText: 'Type your message here...',
-                  border: OutlineInputBorder(),
-                  filled: true,
-                  fillColor: Colors.white,
-                ),
+                decoration: const InputDecoration(hintText: 'Type your message here...', border: OutlineInputBorder(), filled: true, fillColor: Colors.white),
               ),
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () async {
                 if (messageController.text.trim().isNotEmpty) {
                   try {
                     await AdminApiService.sendMessageToUser(
                       user['id'] is int ? user['id'] : int.parse(user['id'].toString()),
-                      selectedType, // Sends 'SUPPORT', 'COMPLAINT', or 'GENERAL' to your backend
+                      selectedType,
                       messageController.text.trim(),
                     );
                     if (!mounted) return;
                     Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Message sent successfully to user\'s app'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Message sent successfully'), backgroundColor: Colors.green));
                   } catch (e) {
                     if (!mounted) return;
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Failed to send message: $e'), backgroundColor: Colors.red),
-                    );
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send message: $e'), backgroundColor: Colors.red));
                   }
                 }
               },
@@ -248,7 +307,7 @@ class _UsersScreenState extends State<UsersScreen> {
                     },
                     style: const TextStyle(color: AdminTheme.textLight),
                     decoration: InputDecoration(
-                      hintText: 'Search by name, surname, ID, email, or contact...',
+                      hintText: 'Search by name, ID, email...',
                       hintStyle: const TextStyle(color: Colors.white54),
                       prefixIcon: const Icon(Icons.search, color: Colors.white54),
                       suffixIcon: _searchQuery.isNotEmpty ? IconButton(icon: const Icon(Icons.clear, color: Colors.white54), onPressed: _clearSearch) : null,
@@ -263,8 +322,8 @@ class _UsersScreenState extends State<UsersScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(_isSearching ? 'Search Results: $_totalElements' : 'Total Users: $_totalElements', style: const TextStyle(color: AdminTheme.textLight)),
-                      Text('Page ${_currentPage + 1} of $_totalPages', style: const TextStyle(color: AdminTheme.textLight)),
+                      Text(_isSearching ? 'Results: $_totalElements' : 'Total: $_totalElements', style: const TextStyle(color: AdminTheme.textLight)),
+                      Text('Page ${_currentPage + 1}/$_totalPages', style: const TextStyle(color: AdminTheme.textLight)),
                     ],
                   ),
                 ),
@@ -281,26 +340,26 @@ class _UsersScreenState extends State<UsersScreen> {
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                               color: AdminTheme.surface,
                               child: ListTile(
+                                // ✅ NEW: Tap anywhere on the card to see details
+                                onTap: () => _showUserDetails(user),
                                 leading: CircleAvatar(
                                   backgroundColor: isActive ? Colors.green : Colors.red,
                                   child: Text((user['name'] ?? '?').substring(0, 1).toUpperCase(), style: const TextStyle(color: Colors.white)),
                                 ),
-                                title: Text('${user['name'] ?? 'Unknown'} ${user['surname'] ?? ''}', style: const TextStyle(color: AdminTheme.textLight)),
+                                title: Text('${user['name'] ?? 'Unknown'} ${user['surname'] ?? ''}', style: const TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.bold)),
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(user['email'] ?? '', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
-                                    Text('UserID: ${user['userid'] ?? 'N/A'} | Contact: ${user['contact'] ?? 'N/A'}', style: TextStyle(color: Colors.grey[500], fontSize: 10)),
-                                    if (user['age'] != null && user['age'] != 0) Text('Age: ${user['age']} | Province: ${user['province'] ?? 'N/A'}', style: TextStyle(color: Colors.grey[500], fontSize: 10)),
+                                    Text('ID: ${user['userid'] ?? 'N/A'}', style: TextStyle(color: Colors.grey[500], fontSize: 10)),
                                   ],
                                 ),
                                 trailing: Wrap(
                                   spacing: 4,
                                   children: [
-                                    IconButton(icon: const Icon(Icons.message, color: Colors.blue), onPressed: () => _showMessageDialog(user), tooltip: 'Message User'),
-                                    if (isActive) IconButton(icon: const Icon(Icons.block, color: Colors.orange), onPressed: () => _banUser(user['id'], user['name']), tooltip: 'Ban'),
-                                    if (!isActive) IconButton(icon: const Icon(Icons.check_circle, color: Colors.green), onPressed: () => _unbanUser(user['id'], user['name']), tooltip: 'Unban'),
-                                    IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteUser(user['id'], user['name']), tooltip: 'Delete'),
+                                    if (isActive) IconButton(icon: const Icon(Icons.block, color: Colors.orange, size: 20), onPressed: () => _banUser(user['id'], user['name']), tooltip: 'Ban'),
+                                    if (!isActive) IconButton(icon: const Icon(Icons.check_circle, color: Colors.green, size: 20), onPressed: () => _unbanUser(user['id'], user['name']), tooltip: 'Unban'),
+                                    IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 20), onPressed: () => _deleteUser(user['id'], user['name']), tooltip: 'Delete'),
                                   ],
                                 ),
                               ),
@@ -316,20 +375,14 @@ class _UsersScreenState extends State<UsersScreen> {
                       if (_currentPage > 0)
                         ElevatedButton(
                           onPressed: () {
-                            setState(() {
-                              _currentPage--;
-                              _isSearching ? _performSearch() : _loadUsers();
-                            });
+                            setState(() { _currentPage--; _isSearching ? _performSearch() : _loadUsers(); });
                           },
                           child: const Text('PREVIOUS'),
                         ),
                       if (_currentPage < _totalPages - 1)
                         ElevatedButton(
                           onPressed: () {
-                            setState(() {
-                              _currentPage++;
-                              _isSearching ? _performSearch() : _loadUsers();
-                            });
+                            setState(() { _currentPage++; _isSearching ? _performSearch() : _loadUsers(); });
                           },
                           child: const Text('NEXT'),
                         ),
