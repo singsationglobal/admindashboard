@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../core/admin_theme.dart';
-import '../../core/admin_local_storage.dart';
-import '../../core/admin_api_service.dart';
+import '../core/admin_theme.dart';
+import '../core/admin_local_storage.dart';
+import '../core/admin_api_service.dart';
 import 'login_screen.dart';
 import 'users_screen.dart';
 import 'songs_screen.dart';
@@ -15,6 +15,7 @@ import 'user_activity_logs_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
+
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
@@ -60,9 +61,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  // ✅ UPDATED: Added 'votes' and 'coins' navigation
   void _navigateTo(String screen) {
     switch (screen) {
       case 'users':
+      case 'votes':   // Navigates to Users screen to see voter details
+      case 'coins':   // Navigates to Users screen to see coin stats
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const UsersScreen()));
         break;
       case 'songs':
@@ -109,18 +113,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         mainAxisSpacing: 12,
                         childAspectRatio: 1.1, // Optimized for mobile screens
                         children: [
-                          GestureDetector(onTap: () => _navigateTo('users'), child: _buildStatCard('Total Users', _stats['totalUsers']?.toString() ?? '0', Icons.people, Colors.blue)),
-                          
-                          // ✅ NEW: Total Votes Card
-                          _buildStatCard('Total Votes', _stats['totalVotesCast']?.toString() ?? '0', Icons.how_to_vote, Colors.purple),
-                          
-                          GestureDetector(onTap: () => _navigateTo('payments'), child: _buildStatCard('Total Payments', _stats['totalPayments']?.toString() ?? '0', Icons.payments, Colors.orange)),
-                          
-                          // ✅ NEW: Total Coins Spent Card
-                          _buildStatCard('Coins Spent', _stats['totalCoinsSpentPlatform']?.toString() ?? '0', Icons.monetization_on, Colors.green),
-                          
-                          GestureDetector(onTap: () => _navigateTo('songs'), child: _buildStatCard('Total Songs', _stats['totalSongs']?.toString() ?? '0', Icons.music_note, Colors.teal)),
-                          GestureDetector(onTap: () => _navigateTo('complaints'), child: _buildStatCard('Complaints', _stats['totalComplaints']?.toString() ?? '0', Icons.report_problem, Colors.red)),
+                          // ✅ All cards are now wrapped in GestureDetector to make them clickable
+                          GestureDetector(
+                            onTap: () => _navigateTo('users'),
+                            child: _buildStatCard('Total Users', _stats['totalUsers']?.toString() ?? '0', Icons.people, Colors.blue),
+                          ),
+                          GestureDetector(
+                            onTap: () => _navigateTo('votes'),
+                            child: _buildStatCard('Total Votes', _stats['totalVotesCast']?.toString() ?? '0', Icons.how_to_vote, Colors.purple),
+                          ),
+                          GestureDetector(
+                            onTap: () => _navigateTo('payments'),
+                            child: _buildStatCard('Total Payments', _stats['totalPayments']?.toString() ?? '0', Icons.payments, Colors.orange),
+                          ),
+                          GestureDetector(
+                            onTap: () => _navigateTo('coins'),
+                            child: _buildStatCard('Coins Spent', _stats['totalCoinsSpentPlatform']?.toString() ?? '0', Icons.monetization_on, Colors.green),
+                          ),
+                          GestureDetector(
+                            onTap: () => _navigateTo('songs'),
+                            child: _buildStatCard('Total Songs', _stats['totalSongs']?.toString() ?? '0', Icons.music_note, Colors.teal),
+                          ),
+                          GestureDetector(
+                            onTap: () => _navigateTo('complaints'),
+                            child: _buildStatCard('Complaints', _stats['totalComplaints']?.toString() ?? '0', Icons.report_problem, Colors.red),
+                          ),
                         ],
                       ),
                     ),
