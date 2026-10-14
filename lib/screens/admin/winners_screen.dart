@@ -10,6 +10,7 @@ import 'dashboard_screen.dart';
 
 class WinnersScreen extends StatefulWidget {
   const WinnersScreen({super.key});
+
   @override
   State<WinnersScreen> createState() => _WinnersScreenState();
 }
@@ -20,27 +21,25 @@ class _WinnersScreenState extends State<WinnersScreen> {
   String _userRole = '';
   final _formKey = GlobalKey<FormState>();
   String _selectedCategory = 'ADULTS';
-  
+
   final _winnerNameController = TextEditingController();
   final _winnerUseridController = TextEditingController();
   final _winnerAgeController = TextEditingController();
   final _provinceController = TextEditingController();
   final _messageController = TextEditingController();
-  
+
   int? _editingWinnerId;
-  
+
   // Search & Auto-fill variables
   final _searchController = TextEditingController();
-  List<dynamic> _allUsers = [];
   List<dynamic> _filteredUsers = [];
-  bool _usersLoaded = false;
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserRole();
     _loadWinners();
-    _loadAllUsers(); // Pre-load users for instant search
   }
 
   @override
@@ -74,78 +73,64 @@ class _WinnersScreenState extends State<WinnersScreen> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load winners: $e'), backgroundColor: Colors.red)
+          SnackBar(content: Text('Failed to load winners: $e'), backgroundColor: Colors.red),
         );
       }
     }
   }
 
-  // Pre-load ALL users so search is instant and doesn't rely on typing triggers
-  Future<void> _loadAllUsers() async {
-    try {
-      print('DEBUG: Loading all users for search...');
-      final data = await AdminApiService.getUsers(0, 1000);
-      if (data['users'] != null && data['users'] is List) {
-        setState(() {
-          _allUsers = data['users'];
-          _usersLoaded = true;
-        });
-        print('DEBUG: Successfully loaded ${_allUsers.length} users');
-      }
-    } catch (e) {
-      print('DEBUG: Failed to load users: $e');
-    }
-  }
-
-  // Filter users as you type
-  void _filterUsers(String query) {
-    print('DEBUG: Filtering users with query: "$query"');
-    if (query.isEmpty) {
+  // ✅ DYNAMIC SEARCH: Fetches matches from backend as you type (much more reliable than pre-loading)
+  Future<void> _filterUsers(String query) async {
+    if (query.trim().isEmpty) {
       setState(() => _filteredUsers = []);
       return;
     }
-    
-    final queryLower = query.toLowerCase();
-    final filtered = _allUsers.where((user) {
-      final name = (user['name'] ?? '').toLowerCase();
-      final surname = (user['surname'] ?? '').toLowerCase();
-      // Check both 'userid' and 'userId' to be safe with Java/Spring Boot JSON mapping
-      final userid = (user['userid'] ?? user['userId'] ?? '').toLowerCase();
-      final email = (user['email'] ?? '').toLowerCase();
-      
-      return name.contains(queryLower) || 
-             surname.contains(queryLower) || 
-             userid.contains(queryLower) ||
-             email.contains(queryLower);
-    }).toList();
-    
-    print('DEBUG: Found ${filtered.length} matching users');
-    
-    setState(() {
-      _filteredUsers = filtered;
-    });
+
+    setState(() => _isSearching = true);
+
+    try {
+      final data = await AdminApiService.searchUsers(query, 0, 20);
+      if (mounted) {
+        // Spring Boot returns 'content', but we check 'users' just in case your backend wraps it
+        final List<dynamic> results = data['content'] ?? data['users'] ?? [];
+        setState(() {
+          _filteredUsers = results;
+          _isSearching = false;
+        });
+      }
+    } catch (e) {
+      print('Search failed: $e');
+      if (mounted) {
+        setState(() {
+          _filteredUsers = [];
+          _isSearching = false;
+        });
+      }
+    }
   }
 
-  // Auto-fill form when a user is selected from the dropdown
+  // ✅ AUTO-FILL FORM when a user is selected from the dropdown
   void _selectUser(Map<String, dynamic> user) {
-    print('DEBUG: Selecting user: ${user['name']} ${user['surname']}');
     setState(() {
-      _winnerNameController.text = '${user['name'] ?? ''} ${user['surname'] ?? ''}'.trim();
-      // Check both 'userid' and 'userId'
-      _winnerUseridController.text = user['userid'] ?? user['userId'] ?? '';
-      // Handle null age safely
+      // Handle both 'name'/'firstName' and 'surname'/'lastName' safely
+      final name = user['name'] ?? user['firstName'] ?? '';
+      final surname = user['surname'] ?? user['lastName'] ?? '';
+
+      _winnerNameController.text = '$name $surname'.trim();
+      _winnerUseridController.text = (user['userid'] ?? user['userId'] ?? '').toString();
+
       final age = user['age'];
-      _winnerAgeController.text = (age != null && age is int) ? age.toString() : (age?.toString() ?? '0');
+      _winnerAgeController.text = (age != null) ? age.toString() : '0';
       _provinceController.text = user['province'] ?? '';
-      
-      // Clear search after selection
+
       _searchController.clear();
       _filteredUsers = [];
+      FocusScope.of(context).unfocus(); // Hide keyboard after selection
     });
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('✅ Auto-filled: ${user['name']} ${user['surname']}'),
+        content: Text('✅ Auto-filled: $name $surname'),
         backgroundColor: Colors.green,
         duration: const Duration(seconds: 2),
       ),
@@ -168,11 +153,11 @@ class _WinnersScreenState extends State<WinnersScreen> {
         _loadWinners();
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Winner announced successfully!'), backgroundColor: Colors.green)
+          const SnackBar(content: Text('Winner announced successfully!'), backgroundColor: Colors.green),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to announce winner: $e'), backgroundColor: Colors.red)
+          SnackBar(content: Text('Failed to announce winner: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -190,23 +175,23 @@ class _WinnersScreenState extends State<WinnersScreen> {
       };
       try {
         final response = await http.put(
-          Uri.parse('${ApiConfig.baseUrl}/admin/winners/${_editingWinnerId}'), 
-          headers: await AdminApiService.getAuthHeader(), 
-          body: json.encode(winnerData)
+          Uri.parse('${ApiConfig.baseUrl}/admin/winners/${_editingWinnerId}'),
+          headers: await AdminApiService.getAuthHeader(),
+          body: json.encode(winnerData),
         );
         if (response.statusCode == 200) {
           _clearForm();
           _loadWinners();
           Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Winner updated successfully'), backgroundColor: Colors.green)
+            const SnackBar(content: Text('Winner updated successfully'), backgroundColor: Colors.green),
           );
         } else {
           throw Exception('Failed to update winner');
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to update winner: $e'), backgroundColor: Colors.red)
+          SnackBar(content: Text('Failed to update winner: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -215,7 +200,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
   Future<void> _deleteWinner(int winnerId, String winnerName) async {
     if (_userRole != 'SUPER_ADMIN' && _userRole != 'ADMIN') {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You do not have permission to delete winners'), backgroundColor: Colors.orange)
+        const SnackBar(content: Text('You do not have permission to delete winners'), backgroundColor: Colors.orange),
       );
       return;
     }
@@ -226,25 +211,29 @@ class _WinnersScreenState extends State<WinnersScreen> {
         content: Text('Are you sure you want to delete "$winnerName"?'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('DELETE')),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('DELETE'),
+          ),
         ],
       ),
     );
     if (confirm == true) {
       try {
         final response = await http.delete(
-          Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId'), 
-          headers: await AdminApiService.getAuthHeader()
+          Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId'),
+          headers: await AdminApiService.getAuthHeader(),
         );
         if (response.statusCode == 200) {
           _loadWinners();
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Winner deleted successfully'), backgroundColor: Colors.green)
+            const SnackBar(content: Text('Winner deleted successfully'), backgroundColor: Colors.green),
           );
         }
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to delete winner: $e'), backgroundColor: Colors.red)
+          SnackBar(content: Text('Failed to delete winner: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -280,27 +269,28 @@ class _WinnersScreenState extends State<WinnersScreen> {
           // 1. SEARCH FIELD
           TextField(
             controller: _searchController,
-            decoration: const InputDecoration(
+            decoration: InputDecoration(
               labelText: 'Search User (Name or ID)',
               hintText: 'Start typing to search...',
-              prefixIcon: Icon(Icons.search),
+              prefixIcon: const Icon(Icons.search),
+              suffixIcon: _isSearching ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : null,
               filled: true,
               fillColor: Colors.white,
             ),
             onChanged: _filterUsers,
           ),
           const SizedBox(height: 8),
-          
+
           // 2. HIGHLY VISIBLE SEARCH RESULTS DROPDOWN
           if (_filteredUsers.isNotEmpty)
             Container(
               constraints: const BoxConstraints(maxHeight: 200),
               decoration: BoxDecoration(
-                color: Colors.white, // Solid white background
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.purple, width: 2), // Thick purple border
-                boxShadow: [
-                  BoxShadow(color: Colors.black26, blurRadius: 4, offset: const Offset(0, 2)),
+                border: Border.all(color: Colors.purple, width: 2),
+                boxShadow: const [
+                  BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2)),
                 ],
               ),
               child: ListView.builder(
@@ -308,8 +298,11 @@ class _WinnersScreenState extends State<WinnersScreen> {
                 itemCount: _filteredUsers.length > 5 ? 5 : _filteredUsers.length,
                 itemBuilder: (context, index) {
                   final user = _filteredUsers[index];
-                  final fullName = '${user['name'] ?? ''} ${user['surname'] ?? ''}'.trim();
+                  final name = user['name'] ?? user['firstName'] ?? '';
+                  final surname = user['surname'] ?? user['lastName'] ?? '';
+                  final fullName = '$name $surname'.trim();
                   final userId = user['userid'] ?? user['userId'] ?? 'N/A';
+                  
                   return ListTile(
                     leading: const CircleAvatar(
                       backgroundColor: Colors.purple,
@@ -328,9 +321,9 @@ class _WinnersScreenState extends State<WinnersScreen> {
                 },
               ),
             ),
-          
+
           const SizedBox(height: 16),
-          
+
           // 3. CATEGORY DROPDOWN
           DropdownButtonFormField<String>(
             value: _selectedCategory,
@@ -346,7 +339,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
             validator: (v) => v == null ? 'Required' : null,
           ),
           const SizedBox(height: 12),
-          
+
           // 4. WINNER NAME
           TextFormField(
             controller: _winnerNameController,
@@ -354,7 +347,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
             validator: (v) => v == null || v.isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 12),
-          
+
           // 5. WINNER USER ID
           TextFormField(
             controller: _winnerUseridController,
@@ -362,7 +355,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
             validator: (v) => v == null || v.isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 12),
-          
+
           // 6. WINNER AGE
           TextFormField(
             controller: _winnerAgeController,
@@ -371,7 +364,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
             validator: (v) => v == null || v.isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 12),
-          
+
           // 7. PROVINCE
           TextFormField(
             controller: _provinceController,
@@ -379,7 +372,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
             validator: (v) => v == null || v.isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 12),
-          
+
           // 8. MESSAGE
           TextFormField(
             controller: _messageController,
@@ -425,8 +418,8 @@ class _WinnersScreenState extends State<WinnersScreen> {
       appBar: AppBar(
         title: const Text('Winner Management'),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back), 
-          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()))
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen())),
         ),
         actions: [
           IconButton(icon: const Icon(Icons.add), onPressed: _showAnnounceDialog, tooltip: 'Announce Winner'),
@@ -461,19 +454,42 @@ class _WinnersScreenState extends State<WinnersScreen> {
                                   child: Text(winner['category'] ?? 'Unknown', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                                 ),
                                 const Spacer(),
-                                Text(DateFormat('dd MMM yyyy').format(DateTime.parse(winner['announcedAt'])), style: TextStyle(color: Colors.grey[500], fontSize: 12)),
-                                if (canModify) IconButton(icon: const Icon(Icons.edit, color: Colors.blue, size: 20), onPressed: () => _editWinner(winner), tooltip: 'Edit Winner', padding: EdgeInsets.zero, constraints: const BoxConstraints()),
-                                if (canModify) IconButton(icon: const Icon(Icons.delete, color: Colors.red, size: 20), onPressed: () => _deleteWinner(winner['id'], winner['winnerName']), tooltip: 'Delete Winner', padding: EdgeInsets.zero, constraints: const BoxConstraints()),
+                                Text(
+                                  DateFormat('dd MMM yyyy').format(DateTime.parse(winner['announcedAt'])),
+                                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                                ),
+                                if (canModify)
+                                  IconButton(
+                                    icon: const Icon(Icons.edit, color: Colors.blue, size: 20),
+                                    onPressed: () => _editWinner(winner),
+                                    tooltip: 'Edit Winner',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
+                                if (canModify)
+                                  IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                    onPressed: () => _deleteWinner(winner['id'], winner['winnerName']),
+                                    tooltip: 'Delete Winner',
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 12),
-                            Text(winner['winnerName'] ?? 'Unknown', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
+                            Text(
+                              winner['winnerName'] ?? 'Unknown',
+                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AdminTheme.textLight),
+                            ),
                             Text('User ID: ${winner['winnerUserid'] ?? 'N/A'}', style: TextStyle(color: Colors.grey[400])),
                             Text('Age: ${winner['winnerAge']} | Province: ${winner['province'] ?? 'N/A'}', style: TextStyle(color: Colors.grey[400])),
-                            if (winner['message'] != null && winner['message'].isNotEmpty)
+                            if (winner['message'] != null && winner['message'].toString().isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
-                                child: Text(winner['message'], style: TextStyle(color: Colors.grey[300], fontStyle: FontStyle.italic)),
+                                child: Text(
+                                  winner['message'],
+                                  style: TextStyle(color: Colors.grey[300], fontStyle: FontStyle.italic),
+                                ),
                               ),
                           ],
                         ),
