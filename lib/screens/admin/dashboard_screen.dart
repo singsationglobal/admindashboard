@@ -81,9 +81,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final adminName = '${_admin['name'] ?? ''} ${_admin['surname'] ?? ''}'.trim();
     final displayName = adminName.isNotEmpty ? adminName : 'Admin';
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text('Welcome, $displayName'),
+        title: Text('Welcome, $displayName', style: const TextStyle(fontSize: 18)),
         actions: [
           IconButton(icon: const Icon(Icons.refresh), onPressed: _refreshStats, tooltip: 'Refresh'),
           IconButton(icon: const Icon(Icons.logout), onPressed: _logout, tooltip: 'Logout'),
@@ -99,19 +100,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Dashboard', style: GoogleFonts.bebasNeue(fontSize: 28, color: AdminTheme.textLight)),
-                    const SizedBox(height: 20),
+                    Text('Dashboard Overview', style: GoogleFonts.bebasNeue(fontSize: 32, color: AdminTheme.textLight, letterSpacing: 1.5)),
+                    const SizedBox(height: 16),
                     Expanded(
                       child: GridView.count(
                         crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 1.5,
+                        crossAxisSpacing: 12,
+                        mainAxisSpacing: 12,
+                        childAspectRatio: 1.1, // Optimized for mobile screens
                         children: [
                           GestureDetector(onTap: () => _navigateTo('users'), child: _buildStatCard('Total Users', _stats['totalUsers']?.toString() ?? '0', Icons.people, Colors.blue)),
-                          GestureDetector(onTap: () => _navigateTo('songs'), child: _buildStatCard('Total Songs', _stats['totalSongs']?.toString() ?? '0', Icons.music_note, Colors.green)),
+                          // NEW: Total Votes Card
+                          _buildStatCard('Total Votes', _stats['totalVotesCast']?.toString() ?? '0', Icons.how_to_vote, Colors.purple),
                           GestureDetector(onTap: () => _navigateTo('payments'), child: _buildStatCard('Total Payments', _stats['totalPayments']?.toString() ?? '0', Icons.payments, Colors.orange)),
-                          GestureDetector(onTap: () => _navigateTo('complaints'), child: _buildStatCard('Total Complaints', _stats['totalComplaints']?.toString() ?? '0', Icons.report_problem, Colors.red)),
+                          // NEW: Total Coins Spent Card
+                          _buildStatCard('Coins Spent', _stats['totalCoinsSpentPlatform']?.toString() ?? '0', Icons.monetization_on, Colors.green),
+                          GestureDetector(onTap: () => _navigateTo('songs'), child: _buildStatCard('Total Songs', _stats['totalSongs']?.toString() ?? '0', Icons.music_note, Colors.teal)),
+                          GestureDetector(onTap: () => _navigateTo('complaints'), child: _buildStatCard('Complaints', _stats['totalComplaints']?.toString() ?? '0', Icons.report_problem, Colors.red)),
                         ],
                       ),
                     ),
@@ -128,15 +133,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(12),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 12),
-            Text(value, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
+            Icon(icon, size: 36, color: color),
+            const SizedBox(height: 8),
+            Text(value, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
             const SizedBox(height: 4),
-            Text(title, style: TextStyle(fontSize: 14, color: Colors.grey[400]), textAlign: TextAlign.center),
+            Text(title, style: TextStyle(fontSize: 13, color: Colors.grey[400], fontWeight: FontWeight.w500), textAlign: TextAlign.center),
           ],
         ),
       ),
@@ -152,7 +157,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           DrawerHeader(
             decoration: const BoxDecoration(color: AdminTheme.primary),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.end, children: [
-              Text('SINGSATION', style: GoogleFonts.bebasNeue(fontSize: 28, color: Colors.white)),
+              Text('SINGSATION', style: GoogleFonts.bebasNeue(fontSize: 28, color: Colors.white, letterSpacing: 2)),
               const SizedBox(height: 4),
               const Text('Admin Panel', style: TextStyle(color: Colors.white70, fontSize: 14)),
             ]),
