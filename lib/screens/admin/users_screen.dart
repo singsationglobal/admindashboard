@@ -128,6 +128,37 @@ class _UsersScreenState extends State<UsersScreen> {
     }
   }
 
+  void _showFullImage(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.black87,
+        child: GestureDetector(
+          onTap: () => Navigator.pop(context),
+          child: InteractiveViewer(
+            minScale: 0.5,
+            maxScale: 4.0,
+            child: Center(
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(child: CircularProgressIndicator(color: Colors.white));
+                },
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(Icons.broken_image, color: Colors.white, size: 50),
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showUserDetails(dynamic user) async {
     showDialog(
       context: context,
@@ -156,26 +187,32 @@ class _UsersScreenState extends State<UsersScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ✅ NEW: Large profile picture and name header
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 35,
-                    backgroundColor: AdminTheme.primary,
-                    backgroundImage: (user['profileImageUrl'] != null && 
-                                    user['profileImageUrl'].toString().isNotEmpty && 
-                                    user['profileImageUrl'] != 'null')
-                        ? NetworkImage(user['profileImageUrl'])
+                  GestureDetector(
+                    onTap: (user['profileImageUrl'] != null && 
+                            user['profileImageUrl'].toString().isNotEmpty && 
+                            user['profileImageUrl'] != 'null')
+                        ? () => _showFullImage(context, user['profileImageUrl'])
                         : null,
-                    child: (user['profileImageUrl'] == null || 
-                            user['profileImageUrl'].toString().isEmpty || 
-                            user['profileImageUrl'] == 'null')
-                        ? Text(
-                            (user['name'] ?? '?').substring(0, 1).toUpperCase(), 
-                            style: const TextStyle(color: Colors.white, fontSize: 24)
-                          )
-                        : null,
+                    child: CircleAvatar(
+                      radius: 35,
+                      backgroundColor: AdminTheme.primary,
+                      backgroundImage: (user['profileImageUrl'] != null && 
+                                      user['profileImageUrl'].toString().isNotEmpty && 
+                                      user['profileImageUrl'] != 'null')
+                          ? NetworkImage(user['profileImageUrl'])
+                          : null,
+                      child: (user['profileImageUrl'] == null || 
+                              user['profileImageUrl'].toString().isEmpty || 
+                              user['profileImageUrl'] == 'null')
+                          ? Text(
+                              (user['name'] ?? '?').substring(0, 1).toUpperCase(), 
+                              style: const TextStyle(color: Colors.white, fontSize: 24)
+                            )
+                          : null,
+                    ),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -369,12 +406,15 @@ class _UsersScreenState extends State<UsersScreen> {
                               color: AdminTheme.surface,
                               child: ListTile(
                                 onTap: () => _showUserDetails(user),
-                                leading: CircleAvatar(
-                                  backgroundColor: isActive ? Colors.green : Colors.red,
-                                  backgroundImage: hasImage ? NetworkImage(profileImageUrl!) : null,
-                                  child: !hasImage 
-                                      ? Text((user['name'] ?? '?').substring(0, 1).toUpperCase(), style: const TextStyle(color: Colors.white))
-                                      : null,
+                                leading: GestureDetector(
+                                  onTap: hasImage ? () => _showFullImage(context, profileImageUrl!) : null,
+                                  child: CircleAvatar(
+                                    backgroundColor: isActive ? Colors.green : Colors.red,
+                                    backgroundImage: hasImage ? NetworkImage(profileImageUrl!) : null,
+                                    child: !hasImage 
+                                        ? Text((user['name'] ?? '?').substring(0, 1).toUpperCase(), style: const TextStyle(color: Colors.white))
+                                        : null,
+                                  ),
                                 ),
                                 title: Text('${user['name'] ?? 'Unknown'} ${user['surname'] ?? ''}', style: const TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.bold)),
                                 subtitle: Column(
