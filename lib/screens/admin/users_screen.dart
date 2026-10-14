@@ -128,7 +128,6 @@ class _UsersScreenState extends State<UsersScreen> {
     }
   }
 
-  // ✅ NEW: Show detailed user info + coin stats in a mobile-friendly bottom sheet
   void _showUserDetails(dynamic user) async {
     showDialog(
       context: context,
@@ -141,7 +140,7 @@ class _UsersScreenState extends State<UsersScreen> {
       final coinStats = await AdminApiService.getUserCoinStats(userId);
       
       if (!mounted) return;
-      Navigator.pop(context); // Close loading
+      Navigator.pop(context);
 
       showModalBottomSheet(
         context: context,
@@ -199,7 +198,7 @@ class _UsersScreenState extends State<UsersScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      Navigator.pop(context); // Close loading
+      Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load user details: $e')));
     }
   }
@@ -336,15 +335,22 @@ class _UsersScreenState extends State<UsersScreen> {
                           itemBuilder: (context, index) {
                             final user = _users[index];
                             final isActive = user['isActive'] ?? true;
+                            
+                            // ✅ NEW: Check if profileImageUrl exists to display the image
+                            final String? profileImageUrl = user['profileImageUrl'];
+                            final bool hasImage = profileImageUrl != null && profileImageUrl.isNotEmpty;
+
                             return Card(
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                               color: AdminTheme.surface,
                               child: ListTile(
-                                // ✅ NEW: Tap anywhere on the card to see details + coin stats
                                 onTap: () => _showUserDetails(user),
                                 leading: CircleAvatar(
                                   backgroundColor: isActive ? Colors.green : Colors.red,
-                                  child: Text((user['name'] ?? '?').substring(0, 1).toUpperCase(), style: const TextStyle(color: Colors.white)),
+                                  backgroundImage: hasImage ? NetworkImage(profileImageUrl!) : null,
+                                  child: !hasImage 
+                                      ? Text((user['name'] ?? '?').substring(0, 1).toUpperCase(), style: const TextStyle(color: Colors.white))
+                                      : null,
                                 ),
                                 title: Text('${user['name'] ?? 'Unknown'} ${user['surname'] ?? ''}', style: const TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.bold)),
                                 subtitle: Column(
