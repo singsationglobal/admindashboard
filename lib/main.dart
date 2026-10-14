@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'core/admin_theme.dart';
 import 'core/admin_local_storage.dart';
-import 'screens/login_screen.dart';
-import 'screens/dashboard_screen.dart';
+import 'home_page.dart'; // Your public homepage
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,11 +46,6 @@ class _SingsationAdminAppState extends State<SingsationAdminApp> {
         ),
       );
     }
-
-    final Widget initialScreen = _isLoggedIn == true 
-        ? const DashboardScreen() 
-        : const LoginScreen();
-
     return MaterialApp(
       title: 'Singsation Admin',
       debugShowCheckedModeBanner: false,
@@ -91,7 +85,8 @@ class _SingsationAdminAppState extends State<SingsationAdminApp> {
           ),
         ),
       ),
-      home: initialScreen,
+      // Kept as HomePage so your live app doesn't break!
+      home: const HomePage(),
     );
   }
 }
