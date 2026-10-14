@@ -340,7 +340,7 @@ class _UsersScreenState extends State<UsersScreen> {
                               margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                               color: AdminTheme.surface,
                               child: ListTile(
-                                // ✅ NEW: Tap anywhere on the card to see details
+                                // ✅ NEW: Tap anywhere on the card to see details + coin stats
                                 onTap: () => _showUserDetails(user),
                                 leading: CircleAvatar(
                                   backgroundColor: isActive ? Colors.green : Colors.red,
