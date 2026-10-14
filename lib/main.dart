@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'core/admin_theme.dart';
 import 'core/admin_local_storage.dart';
-import 'login_screen.dart';
-import 'dashboard_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/dashboard_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
