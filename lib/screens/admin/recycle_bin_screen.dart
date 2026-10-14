@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import '../../core/api_config.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
+import '../../core/admin_local_storage.dart'; // ✅ Added missing import
 import 'dashboard_screen.dart';
 
 class RecycleBinScreen extends StatefulWidget {
@@ -36,7 +37,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     setState(() => _isLoading = true);
     try {
       final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/api/admin/winners/deleted'),
+        Uri.parse('${ApiConfig.baseUrl}/admin/winners/deleted'),
         headers: await AdminApiService.getAuthHeader(),
       );
       
@@ -62,7 +63,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   Future<void> _restoreWinner(int winnerId, String winnerName) async {
     try {
       final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/api/admin/winners/$winnerId/restore'),
+        Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/restore'),
         headers: await AdminApiService.getAuthHeader(),
       );
       
@@ -101,7 +102,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     if (confirm == true) {
       try {
         final response = await http.delete(
-          Uri.parse('${ApiConfig.baseUrl}/api/admin/winners/$winnerId/permanent'),
+          Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/permanent'),
           headers: await AdminApiService.getAuthHeader(),
         );
         
