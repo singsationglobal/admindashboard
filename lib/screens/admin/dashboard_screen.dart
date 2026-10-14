@@ -12,6 +12,7 @@ import 'splash_screen_management_screen.dart';
 import 'winners_screen.dart';
 import 'staff_screen.dart';
 import 'user_activity_logs_screen.dart';
+import 'recycle_bin_screen.dart'; // ✅ Added import for Recycle Bin
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -190,9 +191,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _drawerTile(Icons.payments, 'Payments', 6, () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const PaymentsScreen()))),
           if (_userRole == 'ADMIN' || _userRole == 'SUPER_ADMIN') _drawerTile(Icons.admin_panel_settings, 'Staff', 7, () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const StaffScreen()))),
           
+          // ✅ UPDATED: Recycle Bin now opens the actual screen
           if (_userRole == 'ADMIN' || _userRole == 'SUPER_ADMIN') 
             _drawerTile(Icons.delete_sweep, 'Recycle Bin', 8, () {
-              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recycle Bin screen coming soon!')));
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const RecycleBinScreen()));
             }),
 
           if (_userRole != 'SUPPORT') _drawerTile(Icons.history, 'Activity Logs', 9, () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const UserActivityLogsScreen()))),
