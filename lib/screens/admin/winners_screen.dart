@@ -21,6 +21,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
   String _userRole = '';
   final _formKey = GlobalKey<FormState>();
   String _selectedCategory = 'ADULTS';
+  String _selectedMessageType = 'ANNOUNCEMENT'; // For message routing
 
   final _winnerNameController = TextEditingController();
   final _winnerUseridController = TextEditingController();
@@ -102,7 +103,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
     }
   }
 
-  // ✅ PERFECT AUTO-FILL: Pulls Name, ID, Age, and PROVINCE automatically
+  // ✅ AUTO-FILL: Pulls all user data but keeps fields EDITABLE
   void _selectUser(Map<String, dynamic> user) {
     final name = user['name'] ?? user['firstName'] ?? '';
     final surname = user['surname'] ?? user['lastName'] ?? '';
@@ -113,10 +114,9 @@ class _WinnersScreenState extends State<WinnersScreen> {
       _winnerUseridController.text = (user['userid'] ?? user['userId'] ?? '').toString();
       
       final age = user['age'];
-      _winnerAgeController.text = (age != null) ? age.toString() : ''; // Leave blank if unknown
+      _winnerAgeController.text = (age != null) ? age.toString() : '';
       
-      // ✅ AUTO-FILL PROVINCE so you don't have to guess
-      _provinceController.text = user['province'] ?? 'Unknown'; 
+      _provinceController.text = user['province'] ?? 'Unknown';
       
       _searchController.clear();
       _filteredUsers = [];
@@ -141,6 +141,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
         'winnerAge': int.tryParse(_winnerAgeController.text.trim()) ?? 0,
         'province': _provinceController.text.trim(),
         'message': _messageController.text.trim(),
+        'messageType': _selectedMessageType, // For routing
       };
       try {
         await AdminApiService.announceWinner(winnerData);
@@ -292,7 +293,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
     _showAnnounceDialog(isEditing: true);
   }
 
-  // ✅ CLEAN, PROFESSIONAL DIALOG (Not ugly)
+  // ✅ MOBILE-FRIENDLY DIALOG with proper spacing and NO overlap
   void _showAnnounceDialog({bool isEditing = false}) {
     if (!isEditing) _clearForm();
     
@@ -301,38 +302,58 @@ class _WinnersScreenState extends State<WinnersScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setStateDialog) {
           return AlertDialog(
-            title: Text(isEditing ? 'Edit Winner' : 'Announce Winner', style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text(
+              isEditing ? 'Edit Winner' : 'Announce Winner',
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
             content: SingleChildScrollView(
               child: Form(
                 key: _formKey,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // Search Section (only for new announcements)
                     if (!isEditing) ...[
                       TextField(
                         controller: _searchController,
                         decoration: InputDecoration(
-                          labelText: 'Search User (Name or ID)',
-                          hintText: 'Start typing...',
+                          labelText: 'Search User',
+                          hintText: 'Name or ID...',
                           prefixIcon: const Icon(Icons.search),
-                          suffixIcon: _isSearching ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : null,
+                          suffixIcon: _isSearching 
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : null,
                           filled: true,
-                          fillColor: Colors.grey.shade100,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
                         onChanged: (query) => _filterUsers(query, setStateDialog),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 12),
 
+                      // Search Results
                       if (_filteredUsers.isNotEmpty)
                         Container(
                           constraints: const BoxConstraints(maxHeight: 200),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(8),
+                            borderRadius: BorderRadius.circular(12),
                             border: Border.all(color: Colors.purple, width: 2),
-                            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
                           ),
                           child: ListView.builder(
                             shrinkWrap: true,
@@ -344,17 +365,34 @@ class _WinnersScreenState extends State<WinnersScreen> {
                               final fullName = '$name $surname'.trim();
                               final userId = user['userid'] ?? user['userId'] ?? 'N/A';
                               final profileImage = user['profileImageUrl'];
-                              final hasImage = profileImage != null && profileImage.toString().isNotEmpty && profileImage != 'null';
+                              final hasImage = profileImage != null && 
+                                              profileImage.toString().isNotEmpty && 
+                                              profileImage != 'null';
                               
                               return ListTile(
                                 dense: true,
                                 leading: CircleAvatar(
                                   backgroundColor: Colors.purple,
                                   backgroundImage: hasImage ? NetworkImage(profileImage) : null,
-                                  child: !hasImage ? Text(fullName.substring(0, 1).toUpperCase(), style: const TextStyle(color: Colors.white)) : null,
+                                  child: !hasImage 
+                                      ? Text(
+                                          fullName.substring(0, 1).toUpperCase(),
+                                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                                        )
+                                      : null,
                                 ),
-                                title: Text(fullName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black)),
-                                subtitle: Text('ID: $userId | Province: ${user['province'] ?? 'Unknown'}', style: const TextStyle(fontSize: 12, color: Colors.black87)),
+                                title: Text(
+                                  fullName,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                                subtitle: Text(
+                                  'ID: $userId | Province: ${user['province'] ?? 'Unknown'}',
+                                  style: const TextStyle(fontSize: 11, color: Colors.black87),
+                                ),
                                 onTap: () => _selectUser(user),
                               );
                             },
@@ -363,9 +401,41 @@ class _WinnersScreenState extends State<WinnersScreen> {
                       const SizedBox(height: 16),
                     ],
 
+                    // Message Type Dropdown (for routing)
+                    if (!isEditing) ...[
+                      DropdownButtonFormField<String>(
+                        value: _selectedMessageType,
+                        decoration: InputDecoration(
+                          labelText: 'Message Type',
+                          filled: true,
+                          fillColor: Colors.grey[100],
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                        items: const [
+                          DropdownMenuItem(value: 'ANNOUNCEMENT', child: Text('Winner Announcement')),
+                          DropdownMenuItem(value: 'SUPPORT', child: Text('Support Message')),
+                          DropdownMenuItem(value: 'GENERAL', child: Text('General Announcement')),
+                        ],
+                        onChanged: (value) => setStateDialog(() => _selectedMessageType = value ?? 'ANNOUNCEMENT'),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+
+                    // Category
                     DropdownButtonFormField<String>(
                       value: _selectedCategory,
-                      decoration: const InputDecoration(labelText: 'Category *', filled: true, fillColor: Colors.grey, border: OutlineInputBorder()),
+                      decoration: InputDecoration(
+                        labelText: 'Category *',
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
                       items: const [
                         DropdownMenuItem(value: 'ADULTS', child: Text('Adults (18+)')),
                         DropdownMenuItem(value: 'CHILDREN', child: Text('Children (6-17)')),
@@ -376,28 +446,104 @@ class _WinnersScreenState extends State<WinnersScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    TextFormField(controller: _winnerNameController, decoration: const InputDecoration(labelText: 'Winner Name *', filled: true, fillColor: Colors.grey, border: OutlineInputBorder()), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+                    // Winner Name
+                    TextFormField(
+                      controller: _winnerNameController,
+                      decoration: InputDecoration(
+                        labelText: 'Winner Name *',
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    ),
                     const SizedBox(height: 12),
 
-                    TextFormField(controller: _winnerUseridController, decoration: const InputDecoration(labelText: 'Winner User ID *', filled: true, fillColor: Colors.grey, border: OutlineInputBorder()), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+                    // Winner User ID
+                    TextFormField(
+                      controller: _winnerUseridController,
+                      decoration: InputDecoration(
+                        labelText: 'Winner User ID *',
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    ),
                     const SizedBox(height: 12),
 
-                    TextFormField(controller: _winnerAgeController, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Winner Age *', filled: true, fillColor: Colors.grey, border: OutlineInputBorder()), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+                    // Winner Age
+                    TextFormField(
+                      controller: _winnerAgeController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        labelText: 'Winner Age *',
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    ),
                     const SizedBox(height: 12),
 
-                    TextFormField(controller: _provinceController, decoration: const InputDecoration(labelText: 'Province *', filled: true, fillColor: Colors.grey, border: OutlineInputBorder()), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+                    // Province
+                    TextFormField(
+                      controller: _provinceController,
+                      decoration: InputDecoration(
+                        labelText: 'Province *',
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    ),
                     const SizedBox(height: 12),
 
-                    TextFormField(controller: _messageController, maxLines: 3, decoration: const InputDecoration(labelText: 'Message (Optional)', filled: true, fillColor: Colors.grey, border: OutlineInputBorder())),
+                    // Message
+                    TextFormField(
+                      controller: _messageController,
+                      maxLines: 3,
+                      decoration: InputDecoration(
+                        labelText: 'Message (Optional)',
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 20),
 
+                    // Submit Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
                         onPressed: isEditing ? _updateWinner : _announceWinner,
                         icon: Icon(isEditing ? Icons.save : Icons.emoji_events),
-                        label: Text(isEditing ? 'SAVE CHANGES' : 'ANNOUNCE WINNER', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 15)),
+                        label: Text(
+                          isEditing ? 'SAVE CHANGES' : 'ANNOUNCE WINNER',
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AdminTheme.primary,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -405,7 +551,10 @@ class _WinnersScreenState extends State<WinnersScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('CANCEL'),
+              ),
             ],
           );
         },
@@ -416,6 +565,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
   void _clearForm() {
     _editingWinnerId = null;
     _selectedCategory = 'ADULTS';
+    _selectedMessageType = 'ANNOUNCEMENT';
     _winnerNameController.clear();
     _winnerUseridController.clear();
     _winnerAgeController.clear();
@@ -433,17 +583,33 @@ class _WinnersScreenState extends State<WinnersScreen> {
         title: const Text('Winner Management'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen())),
+          onPressed: () => Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const DashboardScreen()),
+          ),
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.add), onPressed: () => _showAnnounceDialog(isEditing: false), tooltip: 'Announce Winner'),
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadWinners, tooltip: 'Refresh'),
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: () => _showAnnounceDialog(isEditing: false),
+            tooltip: 'Announce Winner',
+          ),
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadWinners,
+            tooltip: 'Refresh',
+          ),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _winners.isEmpty
-              ? const Center(child: Text('No winners announced yet', style: TextStyle(color: Colors.grey)))
+              ? const Center(
+                  child: Text(
+                    'No winners announced yet',
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                )
               : ListView.builder(
                   padding: const EdgeInsets.all(16),
                   itemCount: _winners.length,
@@ -462,14 +628,23 @@ class _WinnersScreenState extends State<WinnersScreen> {
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: winner['category'] == 'CELEBRITY' ? Colors.amber : AdminTheme.primary,
+                                    color: winner['category'] == 'CELEBRITY'
+                                        ? Colors.amber
+                                        : AdminTheme.primary,
                                     borderRadius: BorderRadius.circular(20),
                                   ),
-                                  child: Text(winner['category'] ?? 'Unknown', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                                  child: Text(
+                                    winner['category'] ?? 'Unknown',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                                 ),
                                 const Spacer(),
                                 Text(
-                                  DateFormat('dd MMM yyyy').format(DateTime.parse(winner['announcedAt'])),
+                                  DateFormat('dd MMM yyyy')
+                                      .format(DateTime.parse(winner['announcedAt'])),
                                   style: TextStyle(color: Colors.grey[500], fontSize: 12),
                                 ),
                                 if (canModify)
@@ -493,16 +668,30 @@ class _WinnersScreenState extends State<WinnersScreen> {
                             const SizedBox(height: 12),
                             Text(
                               winner['winnerName'] ?? 'Unknown',
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AdminTheme.textLight),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: AdminTheme.textLight,
+                              ),
                             ),
-                            Text('User ID: ${winner['winnerUserid'] ?? 'N/A'}', style: TextStyle(color: Colors.grey[400])),
-                            Text('Age: ${winner['winnerAge']} | Province: ${winner['province'] ?? 'N/A'}', style: TextStyle(color: Colors.grey[400])),
-                            if (winner['message'] != null && winner['message'].toString().isNotEmpty)
+                            Text(
+                              'User ID: ${winner['winnerUserid'] ?? 'N/A'}',
+                              style: TextStyle(color: Colors.grey[400]),
+                            ),
+                            Text(
+                              'Age: ${winner['winnerAge']} | Province: ${winner['province'] ?? 'N/A'}',
+                              style: TextStyle(color: Colors.grey[400]),
+                            ),
+                            if (winner['message'] != null &&
+                                winner['message'].toString().isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Text(
                                   winner['message'],
-                                  style: TextStyle(color: Colors.grey[300], fontStyle: FontStyle.italic),
+                                  style: TextStyle(
+                                    color: Colors.grey[300],
+                                    fontStyle: FontStyle.italic,
+                                  ),
                                 ),
                               ),
                           ],
