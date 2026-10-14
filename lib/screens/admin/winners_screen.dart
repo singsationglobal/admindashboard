@@ -29,8 +29,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
   final _messageController = TextEditingController();
 
   int? _editingWinnerId;
-
-  // Search variables
   final _searchController = TextEditingController();
   List<dynamic> _filteredUsers = [];
   bool _isSearching = false;
@@ -79,15 +77,12 @@ class _WinnersScreenState extends State<WinnersScreen> {
     }
   }
 
-  // ✅ FIXED: Accepts the Sheet's setState function so the popup updates instantly
   Future<void> _filterUsers(String query, void Function(VoidCallback) sheetSetState) async {
     if (query.trim().isEmpty) {
       sheetSetState(() => _filteredUsers = []);
       return;
     }
-
     sheetSetState(() => _isSearching = true);
-
     try {
       final data = await AdminApiService.searchUsers(query, 0, 20);
       if (mounted) {
@@ -114,7 +109,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
 
     _winnerNameController.text = fullName;
     _winnerUseridController.text = (user['userid'] ?? user['userId'] ?? '').toString();
-
     final age = user['age'];
     _winnerAgeController.text = (age != null) ? age.toString() : '0';
     _provinceController.text = user['province'] ?? '';
@@ -124,11 +118,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
     FocusScope.of(context).unfocus();
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('✅ Auto-filled: $fullName'),
-        backgroundColor: Colors.green,
-        duration: const Duration(seconds: 2),
-      ),
+      SnackBar(content: Text('✅ Auto-filled: $fullName'), backgroundColor: Colors.green, duration: const Duration(seconds: 2)),
     );
   }
 
@@ -146,7 +136,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
         await AdminApiService.announceWinner(winnerData);
         _clearForm();
         _loadWinners();
-        Navigator.pop(context); // Close bottom sheet
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Winner announced successfully!'), backgroundColor: Colors.green),
         );
@@ -200,43 +190,83 @@ class _WinnersScreenState extends State<WinnersScreen> {
       return;
     }
 
-    final confirm = await showDialog<bool>(
+    String confirmText = '';
+    await showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Winner Announcement'),
-        content: Text('Are you sure you want to permanently delete the announcement for "$winnerName"? It will disappear from the app immediately.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('DELETE'),
-          ),
-        ],
+      builder: (context) => StatefulBuilder(
+        builder: (context, setStateDialog) {
+          final bool isPermanent = confirmText.toLowerCase().trim() == 'delete';
+          return AlertDialog(
+            title: const Text('Delete Winner', style: TextStyle(color: Colors.red)),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Type "delete" to permanently remove "$winnerName".\nLeave blank to move to the Recycle Bin (can be restored later).'),
+                const SizedBox(height: 16),
+                TextField(
+                  onChanged: (value) => setStateDialog(() => confirmText = value),
+                  decoration: InputDecoration(
+                    hintText: 'Type "delete" or leave blank',
+                    border: const OutlineInputBorder(),
+                    fillColor: isPermanent ? Colors.red.shade50 : Colors.grey.shade100,
+                    filled: true,
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('CANCEL')),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  _executeDelete(winnerId, winnerName, isPermanent);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isPermanent ? Colors.red : Colors.orange,
+                ),
+                child: Text(isPermanent ? 'PERMANENTLY DELETE' : 'MOVE TO BIN'),
+              ),
+            ],
+          );
+        },
       ),
     );
+  }
 
-    if (confirm == true) {
-      try {
+  Future<void> _executeDelete(int winnerId, String winnerName, bool isPermanent) async {
+    try {
+      if (isPermanent) {
         final response = await http.delete(
-          Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId'),
+          Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/permanent'),
           headers: await AdminApiService.getAuthHeader(),
         );
-
-        if (response.statusCode == 200) {
-          _loadWinners();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Winner announcement deleted successfully.'), backgroundColor: Colors.green),
-          );
-        } else {
+        if (response.statusCode != 200) {
           final errorBody = json.decode(response.body);
-          throw Exception(errorBody['error'] ?? 'Failed to delete winner');
+          throw Exception(errorBody['error'] ?? 'Failed to permanently delete');
         }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      } else {
+        final response = await http.post(
+          Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/delete'),
+          headers: await AdminApiService.getAuthHeader(),
         );
+        if (response.statusCode != 200) {
+          final errorBody = json.decode(response.body);
+          throw Exception(errorBody['error'] ?? 'Failed to move to bin');
+        }
       }
+
+      _loadWinners();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(isPermanent ? 'Permanently deleted.' : 'Moved to Recycle Bin.'),
+          backgroundColor: isPermanent ? Colors.red : Colors.orange,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+      );
     }
   }
 
@@ -249,11 +279,9 @@ class _WinnersScreenState extends State<WinnersScreen> {
     _provinceController.text = winner['province'] ?? '';
     _messageController.text = winner['message'] ?? '';
     
-    // Re-use the same bottom sheet for editing
     _showAnnounceDialog(isEditing: true);
   }
 
-  // ✅ FIXED: Uses showModalBottomSheet to prevent mobile overlap
   void _showAnnounceDialog({bool isEditing = false}) {
     if (!isEditing) _clearForm();
     
@@ -287,7 +315,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
                     const Divider(color: Colors.grey),
                     const SizedBox(height: 10),
 
-                    // 1. SEARCH FIELD (Only show if not editing, or keep it if you want to allow changing the user)
                     if (!isEditing) ...[
                       TextField(
                         controller: _searchController,
@@ -307,7 +334,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
                       ),
                       const SizedBox(height: 8),
 
-                      // 2. DROPDOWN
                       if (_filteredUsers.isNotEmpty)
                         Container(
                           constraints: const BoxConstraints(maxHeight: 150),
@@ -339,7 +365,6 @@ class _WinnersScreenState extends State<WinnersScreen> {
                       const SizedBox(height: 16),
                     ],
 
-                    // 3. CATEGORY
                     DropdownButtonFormField<String>(
                       value: _selectedCategory,
                       dropdownColor: AdminTheme.surface,
@@ -355,27 +380,21 @@ class _WinnersScreenState extends State<WinnersScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // 4. NAME
                     TextFormField(controller: _winnerNameController, style: const TextStyle(color: AdminTheme.textLight), decoration: const InputDecoration(labelText: 'Winner Name *', labelStyle: TextStyle(color: Colors.grey), filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
                     const SizedBox(height: 12),
 
-                    // 5. USER ID
                     TextFormField(controller: _winnerUseridController, style: const TextStyle(color: AdminTheme.textLight), decoration: const InputDecoration(labelText: 'Winner User ID *', labelStyle: TextStyle(color: Colors.grey), filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
                     const SizedBox(height: 12),
 
-                    // 6. AGE
                     TextFormField(controller: _winnerAgeController, keyboardType: TextInputType.number, style: const TextStyle(color: AdminTheme.textLight), decoration: const InputDecoration(labelText: 'Winner Age *', labelStyle: TextStyle(color: Colors.grey), filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
                     const SizedBox(height: 12),
 
-                    // 7. PROVINCE
                     TextFormField(controller: _provinceController, style: const TextStyle(color: AdminTheme.textLight), decoration: const InputDecoration(labelText: 'Province *', labelStyle: TextStyle(color: Colors.grey), filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
                     const SizedBox(height: 12),
 
-                    // 8. MESSAGE
                     TextFormField(controller: _messageController, maxLines: 3, style: const TextStyle(color: AdminTheme.textLight), decoration: const InputDecoration(labelText: 'Message (Optional)', labelStyle: TextStyle(color: Colors.grey), filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none))),
                     const SizedBox(height: 20),
 
-                    // ACTION BUTTONS
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
@@ -385,7 +404,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
                         style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 15)),
                       ),
                     ),
-                    const SizedBox(height: 10), // Bottom padding for safe area
+                    const SizedBox(height: 10),
                   ],
                 ),
               ),
