@@ -369,7 +369,13 @@ class _WinnersScreenState extends State<WinnersScreen> {
                       value: _selectedCategory,
                       dropdownColor: AdminTheme.surface,
                       style: const TextStyle(color: AdminTheme.textLight),
-                      decoration: const InputDecoration(labelText: 'Category *', labelStyle: TextStyle(color: Colors.grey), filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)),
+                      decoration: InputDecoration(
+                        labelText: 'Category *', 
+                        labelStyle: const TextStyle(color: Colors.grey), 
+                        filled: true, 
+                        fillColor: Colors.white10, 
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)
+                      ),
                       items: const [
                         DropdownMenuItem(value: 'ADULTS', child: Text('Adults (18+)')),
                         DropdownMenuItem(value: 'CHILDREN', child: Text('Children (6-17)')),
@@ -380,19 +386,75 @@ class _WinnersScreenState extends State<WinnersScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    TextFormField(controller: _winnerNameController, style: const TextStyle(color: AdminTheme.textLight), decoration: const InputDecoration(labelText: 'Winner Name *', labelStyle: TextStyle(color: Colors.grey), filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+                    TextFormField(
+                      controller: _winnerNameController, 
+                      style: const TextStyle(color: AdminTheme.textLight), 
+                      decoration: InputDecoration(
+                        labelText: 'Winner Name *', 
+                        labelStyle: const TextStyle(color: Colors.grey), 
+                        filled: true, 
+                        fillColor: Colors.white10, 
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)
+                      ), 
+                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    ),
                     const SizedBox(height: 12),
 
-                    TextFormField(controller: _winnerUseridController, style: const TextStyle(color: AdminTheme.textLight), decoration: const InputDecoration(labelText: 'Winner User ID *', labelStyle: TextStyle(color: Colors.grey), filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+                    TextFormField(
+                      controller: _winnerUseridController, 
+                      style: const TextStyle(color: AdminTheme.textLight), 
+                      decoration: InputDecoration(
+                        labelText: 'Winner User ID *', 
+                        labelStyle: const TextStyle(color: Colors.grey), 
+                        filled: true, 
+                        fillColor: Colors.white10, 
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)
+                      ), 
+                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    ),
                     const SizedBox(height: 12),
 
-                    TextFormField(controller: _winnerAgeController, keyboardType: TextInputType.number, style: const TextStyle(color: AdminTheme.textLight), decoration: const InputDecoration(labelText: 'Winner Age *', labelStyle: TextStyle(color: Colors.grey), filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+                    TextFormField(
+                      controller: _winnerAgeController, 
+                      keyboardType: TextInputType.number, 
+                      style: const TextStyle(color: AdminTheme.textLight), 
+                      decoration: InputDecoration(
+                        labelText: 'Winner Age *', 
+                        labelStyle: const TextStyle(color: Colors.grey), 
+                        filled: true, 
+                        fillColor: Colors.white10, 
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)
+                      ), 
+                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    ),
                     const SizedBox(height: 12),
 
-                    TextFormField(controller: _provinceController, style: const TextStyle(color: AdminTheme.textLight), decoration: const InputDecoration(labelText: 'Province *', labelStyle: TextStyle(color: Colors.grey), filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)), validator: (v) => v == null || v.isEmpty ? 'Required' : null),
+                    TextFormField(
+                      controller: _provinceController, 
+                      style: const TextStyle(color: AdminTheme.textLight), 
+                      decoration: InputDecoration(
+                        labelText: 'Province *', 
+                        labelStyle: const TextStyle(color: Colors.grey), 
+                        filled: true, 
+                        fillColor: Colors.white10, 
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)
+                      ), 
+                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                    ),
                     const SizedBox(height: 12),
 
-                    TextFormField(controller: _messageController, maxLines: 3, style: const TextStyle(color: AdminTheme.textLight), decoration: const InputDecoration(labelText: 'Message (Optional)', labelStyle: TextStyle(color: Colors.grey), filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none))),
+                    TextFormField(
+                      controller: _messageController, 
+                      maxLines: 3, 
+                      style: const TextStyle(color: AdminTheme.textLight), 
+                      decoration: InputDecoration(
+                        labelText: 'Message (Optional)', 
+                        labelStyle: const TextStyle(color: Colors.grey), 
+                        filled: true, 
+                        fillColor: Colors.white10, 
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none)
+                      ),
+                    ),
                     const SizedBox(height: 20),
 
                     SizedBox(
