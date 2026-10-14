@@ -1,102 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io';
 import 'package:google_fonts/google_fonts.dart';
-import 'core/admin_theme.dart';
-import 'core/admin_local_storage.dart';
-
-// ✅ ADD THESE IMPORTS (Adjust the paths if your screens are inside a 'screens/' folder)
-import 'login_screen.dart'; 
-import 'dashboard_screen.dart'; 
+import 'package:camera/camera.dart';
+import 'core/globals.dart';
+import 'core/app_theme.dart';
+import 'core/app_data.dart';
+import 'services/local_storage_service.dart';
+import 'screens/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const SingsationAdminApp());
+  await LocalStorageService.init();
+  await AppData.loadFromStorage();
+  
+  if (!kIsWeb && !Platform.isWindows) {
+    try { 
+      cameras = await availableCameras(); 
+    } catch (e) { 
+      cameras = []; 
+    }
+  } else { 
+    cameras = []; 
+  }
+  
+  runApp(const SingsationsApp());
 }
 
-class SingsationAdminApp extends StatefulWidget {
-  const SingsationAdminApp({super.key});
-
-  @override
-  State<SingsationAdminApp> createState() => _SingsationAdminAppState();
-}
-
-class _SingsationAdminAppState extends State<SingsationAdminApp> {
-  bool? _isLoggedIn;
-  bool _isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkLogin();
-  }
-
-  Future<void> _checkLogin() async {
-    final loggedIn = await AdminLocalStorage.isLoggedIn();
-    setState(() {
-      _isLoggedIn = loggedIn;
-      _isLoading = false;
-    });
-  }
+class SingsationsApp extends StatelessWidget {
+  const SingsationsApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Show loading spinner while checking auth state
-    if (_isLoading) {
-      return MaterialApp(
-        home: Scaffold(
-          body: Container(
-            color: AdminTheme.background,
-            child: const Center(child: CircularProgressIndicator()),
-          ),
-        ),
-      );
-    }
-
-    // ✅ DYNAMICALLY CHOOSE THE STARTING SCREEN BASED ON LOGIN STATE
-    final Widget initialScreen = _isLoggedIn == true 
-        ? const DashboardScreen() 
-        : const LoginScreen();
-
     return MaterialApp(
-      title: 'Singsation Admin',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: AdminTheme.primary,
-        scaffoldBackgroundColor: AdminTheme.background,
-        textTheme: GoogleFonts.poppinsTextTheme(),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: AdminTheme.surface,
-          foregroundColor: AdminTheme.textLight,
-          elevation: 0,
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: BorderSide.none,
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10),
-            borderSide: const BorderSide(color: AdminTheme.primary, width: 2),
-          ),
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AdminTheme.primary,
-            foregroundColor: AdminTheme.textLight,
-            minimumSize: const Size(double.infinity, 45),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        ),
+        scaffoldBackgroundColor: AppTheme.orangeBg,
+        textTheme: GoogleFonts.robotoTextTheme(),
       ),
-      // ✅ UPDATED: Use the dynamically chosen screen instead of hardcoded HomePage
-      home: initialScreen,
+      home: const SplashScreen(),
     );
   }
 }
