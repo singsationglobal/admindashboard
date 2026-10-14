@@ -189,9 +189,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _drawerTile(Icons.report_problem, 'Complaints', 5, () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ComplaintsScreen()))),
           _drawerTile(Icons.payments, 'Payments', 6, () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const PaymentsScreen()))),
           if (_userRole == 'ADMIN' || _userRole == 'SUPER_ADMIN') _drawerTile(Icons.admin_panel_settings, 'Staff', 7, () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const StaffScreen()))),
-          if (_userRole != 'SUPPORT') _drawerTile(Icons.history, 'Activity Logs', 8, () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const UserActivityLogsScreen()))),
+          
+          if (_userRole == 'ADMIN' || _userRole == 'SUPER_ADMIN') 
+            _drawerTile(Icons.delete_sweep, 'Recycle Bin', 8, () {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Recycle Bin screen coming soon!')));
+            }),
+
+          if (_userRole != 'SUPPORT') _drawerTile(Icons.history, 'Activity Logs', 9, () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const UserActivityLogsScreen()))),
           const Divider(color: Colors.grey),
-          _drawerTile(Icons.logout, 'Logout', 9, () {
+          _drawerTile(Icons.logout, 'Logout', 10, () {
             AdminLocalStorage.clear();
             Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
           }),
