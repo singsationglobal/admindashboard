@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../core/admin_theme.dart';
-import '../core/admin_local_storage.dart';
-import '../core/admin_api_service.dart';
+import '../../core/admin_theme.dart';
+import '../../core/admin_local_storage.dart';
+import '../../core/admin_api_service.dart';
 import 'login_screen.dart';
 import 'users_screen.dart';
 import 'songs_screen.dart';
@@ -61,12 +61,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
-  // ✅ UPDATED: Added 'votes' and 'coins' navigation
   void _navigateTo(String screen) {
     switch (screen) {
       case 'users':
-      case 'votes':   // Navigates to Users screen to see voter details
-      case 'coins':   // Navigates to Users screen to see coin stats
+      case 'votes':
+      case 'coins':
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const UsersScreen()));
         break;
       case 'songs':
@@ -111,9 +110,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 1.1, // Optimized for mobile screens
+                        childAspectRatio: 1.1,
                         children: [
-                          // ✅ All cards are now wrapped in GestureDetector to make them clickable
                           GestureDetector(
                             onTap: () => _navigateTo('users'),
                             child: _buildStatCard('Total Users', _stats['totalUsers']?.toString() ?? '0', Icons.people, Colors.blue),
