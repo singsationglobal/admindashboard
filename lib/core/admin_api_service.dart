@@ -306,4 +306,20 @@ class AdminApiService {
     );
     if (response.statusCode != 200) throw Exception('Failed to unhide songs in bulk');
   }
+
+  // FETCH USER COIN & VOTING STATS
+  static Future<Map<String, dynamic>> getUserCoinStats(int userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/admin/voting/user-coins/$userId'),
+        headers: await getAuthHeader(),
+      );
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
+      }
+      throw Exception('Failed to load coin stats');
+    } catch (e) {
+      throw Exception('Network error: $e');
+    }
+  }
 }
