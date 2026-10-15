@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
 import 'dashboard_screen.dart';
+import 'complaints_bin_screen.dart'; // ✅ Import the new bin screen
 
 class ComplaintsScreen extends StatefulWidget {
   const ComplaintsScreen({super.key});
@@ -75,6 +76,17 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
     }
   }
 
+  // ✅ UPDATED: Now moves to bin instead of permanent delete
+  Future<void> _deleteComplaint(Map<String, dynamic> complaint) async {
+    try {
+      await AdminApiService.softDeleteComplaint(complaint['id']);
+      _loadComplaints();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Moved to Recycle Bin'), backgroundColor: Colors.orange));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+    }
+  }
+
   Color _getStatusColor(String status) {
     switch (status) {
       case 'OPEN': return Colors.red;
@@ -91,6 +103,12 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
         title: const Text('Complaint Management'),
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()))),
         actions: [
+          // ✅ NEW: Button to view the bin
+          IconButton(
+            icon: const Icon(Icons.delete_sweep),
+            tooltip: 'View Recycle Bin',
+            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ComplaintsBinScreen())),
+          ),
           Container(
             margin: const EdgeInsets.only(right: 16),
             child: DropdownButton<String>(
@@ -160,7 +178,14 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                                       ),
                                     ),
                                   const SizedBox(height: 12),
-                                  ElevatedButton(onPressed: () => _replyToComplaint(complaint), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary), child: const Text('REPLY')),
+                                  Row(
+                                    children: [
+                                      Expanded(child: ElevatedButton(onPressed: () => _replyToComplaint(complaint), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary), child: const Text('REPLY'))),
+                                      const SizedBox(width: 8),
+                                      // ✅ UPDATED: Delete button now moves to bin
+                                      Expanded(child: ElevatedButton(onPressed: () => _deleteComplaint(complaint), style: ElevatedButton.styleFrom(backgroundColor: Colors.orange), child: const Text('MOVE TO BIN'))),
+                                    ],
+                                  ),
                                 ],
                               ),
                             ),
