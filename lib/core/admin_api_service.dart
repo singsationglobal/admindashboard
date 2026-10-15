@@ -173,10 +173,51 @@ class AdminApiService {
     throw Exception('Failed to load complaints');
   }
 
+  // ✅ NEW: Get Deleted Complaints (Bin)
+  static Future<Map<String, dynamic>> getDeletedComplaints(int page, int size) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/admin/complaints/bin?page=$page&size=$size'), 
+      headers: await _authHeader(),
+    );
+    if (response.statusCode == 200) return json.decode(response.body);
+    throw Exception('Failed to load deleted complaints');
+  }
+
   static Future<Map<String, dynamic>> replyToComplaint(int complaintId, String adminReply, String status) async {
-    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/reply'), headers: await _authHeader(), body: json.encode({'adminReply': adminReply, 'status': status}));
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/reply'), 
+      headers: await _authHeader(), 
+      body: json.encode({'adminReply': adminReply, 'status': status}),
+    );
     if (response.statusCode == 200) return json.decode(response.body);
     throw Exception('Failed to reply to complaint');
+  }
+
+  // ✅ NEW: Soft Delete (Move to Bin)
+  static Future<void> softDeleteComplaint(int complaintId) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/bin'), 
+      headers: await _authHeader(),
+    );
+    if (response.statusCode != 200) throw Exception('Failed to move to bin');
+  }
+
+  // ✅ NEW: Restore from Bin
+  static Future<void> restoreComplaint(int complaintId) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/restore'), 
+      headers: await _authHeader(),
+    );
+    if (response.statusCode != 200) throw Exception('Failed to restore complaint');
+  }
+
+  // ✅ NEW: Permanent Delete
+  static Future<void> permanentDeleteComplaint(int complaintId) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/permanent'), 
+      headers: await _authHeader(),
+    );
+    if (response.statusCode != 200) throw Exception('Failed to permanently delete');
   }
 
   static Future<Map<String, dynamic>> getPayments(int page, int size) async {
