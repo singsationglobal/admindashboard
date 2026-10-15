@@ -21,7 +21,7 @@ class _WinnersScreenState extends State<WinnersScreen> {
   String _userRole = '';
   final _formKey = GlobalKey<FormState>();
   String _selectedCategory = 'ADULTS';
-  String _selectedMessageType = 'ANNOUNCEMENT'; 
+  String _selectedMessageType = 'ANNOUNCEMENT';
 
   final _winnerNameController = TextEditingController();
   final _winnerUseridController = TextEditingController();
@@ -113,9 +113,9 @@ class _WinnersScreenState extends State<WinnersScreen> {
       _winnerUseridController.text = (user['userid'] ?? user['userId'] ?? '').toString();
       
       final age = user['age'];
-      _winnerAgeController.text = (age != null) ? age.toString() : ''; 
+      _winnerAgeController.text = (age != null) ? age.toString() : '';
       
-      _provinceController.text = user['province'] ?? ''; 
+      _provinceController.text = user['province'] ?? '';
       
       _searchController.clear();
       _filteredUsers = [];
@@ -132,34 +132,34 @@ class _WinnersScreenState extends State<WinnersScreen> {
   }
 
   Future<void> _announceWinner() async {
-    // ✅ FIXED: Age and Province are now optional. If empty, we send null.
-    final winnerData = {
-      'category': _selectedCategory,
-      'winnerName': _winnerNameController.text.trim(),
-      'winnerUserid': _winnerUseridController.text.trim(),
-      'winnerAge': _winnerAgeController.text.trim().isEmpty ? null : int.tryParse(_winnerAgeController.text.trim()),
-      'province': _provinceController.text.trim().isEmpty ? null : _provinceController.text.trim(),
-      'message': _messageController.text.trim(),
-      'messageType': _selectedMessageType, 
-    };
-
-    try {
-      await AdminApiService.announceWinner(winnerData);
-      _clearForm();
-      _loadWinners();
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Winner announced successfully!'), backgroundColor: Colors.green),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to announce winner: $e'), backgroundColor: Colors.red),
-      );
+    if (_formKey.currentState!.validate()) {
+      final winnerData = {
+        'category': _selectedCategory,
+        'winnerName': _winnerNameController.text.trim(),
+        'winnerUserid': _winnerUseridController.text.trim(),
+        'winnerAge': _winnerAgeController.text.trim().isEmpty ? null : int.tryParse(_winnerAgeController.text.trim()),
+        'province': _provinceController.text.trim().isEmpty ? null : _provinceController.text.trim(),
+        'message': _messageController.text.trim(),
+        'messageType': _selectedMessageType,
+      };
+      try {
+        await AdminApiService.announceWinner(winnerData);
+        _clearForm();
+        _loadWinners();
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Winner announced successfully!'), backgroundColor: Colors.green),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to announce winner: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
   Future<void> _updateWinner() async {
-    if (_editingWinnerId != null) {
+    if (_formKey.currentState!.validate() && _editingWinnerId != null) {
       final winnerData = {
         'category': _selectedCategory,
         'winnerName': _winnerNameController.text.trim(),
@@ -407,26 +407,24 @@ class _WinnersScreenState extends State<WinnersScreen> {
                     ),
                     const SizedBox(height: 12),
 
-                    // ✅ FIXED: Age is now OPTIONAL. No validator.
                     TextFormField(
                       controller: _winnerAgeController,
                       keyboardType: TextInputType.number,
                       decoration: InputDecoration(
-                        labelText: 'Winner Age (Optional)', 
-                        filled: true, 
-                        fillColor: Colors.grey[100], 
+                        labelText: 'Winner Age (Optional)',
+                        filled: true,
+                        fillColor: Colors.grey[100],
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                       ),
                     ),
                     const SizedBox(height: 12),
 
-                    // ✅ FIXED: Province is now OPTIONAL. No validator.
                     TextFormField(
                       controller: _provinceController,
                       decoration: InputDecoration(
-                        labelText: 'Province (Optional)', 
-                        filled: true, 
-                        fillColor: Colors.grey[100], 
+                        labelText: 'Province (Optional)',
+                        filled: true,
+                        fillColor: Colors.grey[100],
                         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                       ),
                     ),
