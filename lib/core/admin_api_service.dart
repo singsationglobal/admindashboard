@@ -165,6 +165,31 @@ class AdminApiService {
     return [];
   }
 
+  // ✅ ADDED: Winner Recycle Bin Methods
+  static Future<void> softDeleteWinner(int winnerId) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/bin'), 
+      headers: await _authHeader(),
+    );
+    if (response.statusCode != 200) throw Exception('Failed to move winner to bin');
+  }
+
+  static Future<void> restoreWinner(int winnerId) async {
+    final response = await http.post(
+      Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/restore'), 
+      headers: await _authHeader(),
+    );
+    if (response.statusCode != 200) throw Exception('Failed to restore winner');
+  }
+
+  static Future<void> permanentDeleteWinner(int winnerId) async {
+    final response = await http.delete(
+      Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/permanent'), 
+      headers: await _authHeader(),
+    );
+    if (response.statusCode != 200) throw Exception('Failed to permanently delete winner');
+  }
+
   static Future<Map<String, dynamic>> getComplaints(int page, int size, {String? status}) async {
     String url = '${ApiConfig.baseUrl}/admin/complaints?page=$page&size=$size';
     if (status != null && status.isNotEmpty) url += '&status=$status';
@@ -173,7 +198,6 @@ class AdminApiService {
     throw Exception('Failed to load complaints');
   }
 
-  // ✅ NEW: Get Deleted Complaints (Bin)
   static Future<Map<String, dynamic>> getDeletedComplaints(int page, int size) async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/complaints/bin?page=$page&size=$size'), 
@@ -193,7 +217,6 @@ class AdminApiService {
     throw Exception('Failed to reply to complaint');
   }
 
-  // ✅ NEW: Soft Delete (Move to Bin)
   static Future<void> softDeleteComplaint(int complaintId) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/bin'), 
@@ -202,7 +225,6 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to move to bin');
   }
 
-  // ✅ NEW: Restore from Bin
   static Future<void> restoreComplaint(int complaintId) async {
     final response = await http.post(
       Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/restore'), 
@@ -211,7 +233,6 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to restore complaint');
   }
 
-  // ✅ NEW: Permanent Delete
   static Future<void> permanentDeleteComplaint(int complaintId) async {
     final response = await http.delete(
       Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/permanent'), 
@@ -348,7 +369,6 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to unhide songs in bulk');
   }
 
-  // FETCH USER COIN & VOTING STATS
   static Future<Map<String, dynamic>> getUserCoinStats(int userId) async {
     try {
       final response = await http.get(
