@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
 import 'dashboard_screen.dart';
-import 'complaints_bin_screen.dart'; // ✅ CRITICAL: This import was missing or broken
+import 'complaints_bin_screen.dart'; // ✅ Ensures the bin screen is accessible
 
 class ComplaintsScreen extends StatefulWidget {
   const ComplaintsScreen({super.key});
@@ -31,14 +31,18 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
     try {
       final data = await AdminApiService.getComplaints(_currentPage, 20, status: _statusFilter.isEmpty ? null : _statusFilter);
       setState(() {
-        _complaints = data['complaints'];
-        _totalPages = data['totalPages'];
-        _totalElements = data['totalElements'];
+        _complaints = data['complaints'] ?? [];
+        _totalPages = data['totalPages'] ?? 0;
+        _totalElements = data['totalElements'] ?? 0;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load complaints: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load complaints: $e'), backgroundColor: Colors.red)
+        );
+      }
     }
   }
 
@@ -86,22 +90,34 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
     if (result == true) {
       try {
         await AdminApiService.replyToComplaint(complaint['id'], replyController.text.trim(), status);
-        _loadComplaints();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reply sent successfully'), backgroundColor: Colors.green));
+        _loadComplaints(); // ✅ Updates the list immediately
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reply sent successfully'), backgroundColor: Colors.green));
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send reply: $e'), backgroundColor: Colors.red));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send reply: $e'), backgroundColor: Colors.red));
+        }
       }
     }
   }
 
-  // ✅ UPDATED: Moves to bin instead of permanent delete
+  // ✅ UPDATED: Moves to bin instead of permanent delete, and refreshes the list
   Future<void> _deleteComplaint(Map<String, dynamic> complaint) async {
     try {
       await AdminApiService.softDeleteComplaint(complaint['id']);
-      _loadComplaints();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Moved to Recycle Bin'), backgroundColor: Colors.orange));
+      _loadComplaints(); // ✅ This ensures the complaint disappears from the list immediately
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Moved to Recycle Bin'), backgroundColor: Colors.orange)
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red)
+        );
+      }
     }
   }
 
@@ -119,9 +135,12 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Complaint Management'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()))),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back), 
+          onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()))
+        ),
         actions: [
-          // ✅ NEW: Button to view the bin
+          // ✅ Button to view the bin
           IconButton(
             icon: const Icon(Icons.delete_sweep),
             tooltip: 'View Recycle Bin',
@@ -155,7 +174,16 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
-                Padding(padding: const EdgeInsets.all(16), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text('Total Complaints: $_totalElements', style: const TextStyle(color: AdminTheme.textLight)), Text('Page ${_currentPage + 1} of $_totalPages', style: const TextStyle(color: AdminTheme.textLight))])),
+                Padding(
+                  padding: const EdgeInsets.all(16), 
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween, 
+                    children: [
+                      Text('Total Complaints: $_totalElements', style: const TextStyle(color: AdminTheme.textLight)), 
+                      Text('Page ${_currentPage + 1} of $_totalPages', style: const TextStyle(color: AdminTheme.textLight))
+                    ]
+                  )
+                ),
                 Expanded(
                   child: ListView.builder(
                     itemCount: _complaints.length,
@@ -169,7 +197,11 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                           title: Text(complaint['subject'] ?? 'No Subject', style: const TextStyle(color: AdminTheme.textLight)),
                           subtitle: Row(
                             children: [
-                              Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), decoration: BoxDecoration(color: _getStatusColor(complaint['status'] ?? 'OPEN'), borderRadius: BorderRadius.circular(12)), child: Text(complaint['status'] ?? 'OPEN', style: const TextStyle(color: Colors.white, fontSize: 10))),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2), 
+                                decoration: BoxDecoration(color: _getStatusColor(complaint['status'] ?? 'OPEN'), borderRadius: BorderRadius.circular(12)), 
+                                child: Text(complaint['status'] ?? 'OPEN', style: const TextStyle(color: Colors.white, fontSize: 10))
+                              ),
                               const SizedBox(width: 8),
                               Text('From: ${user['name'] ?? 'Unknown'}', style: TextStyle(color: Colors.grey[400], fontSize: 12)),
                             ],
@@ -198,10 +230,22 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                                   const SizedBox(height: 12),
                                   Row(
                                     children: [
-                                      Expanded(child: ElevatedButton(onPressed: () => _replyToComplaint(complaint), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary), child: const Text('REPLY'))),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () => _replyToComplaint(complaint), 
+                                          style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary), 
+                                          child: const Text('REPLY')
+                                        )
+                                      ),
                                       const SizedBox(width: 8),
                                       // ✅ UPDATED: Delete button now moves to bin
-                                      Expanded(child: ElevatedButton(onPressed: () => _deleteComplaint(complaint), style: ElevatedButton.styleFrom(backgroundColor: Colors.orange), child: const Text('MOVE TO BIN'))),
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          onPressed: () => _deleteComplaint(complaint), 
+                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange), 
+                                          child: const Text('MOVE TO BIN')
+                                        )
+                                      ),
                                     ],
                                   ),
                                 ],
@@ -218,8 +262,16 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      if (_currentPage > 0) ElevatedButton(onPressed: () { setState(() { _currentPage--; _loadComplaints(); }); }, child: const Text('PREVIOUS')),
-                      if (_currentPage < _totalPages - 1) ElevatedButton(onPressed: () { setState(() { _currentPage++; _loadComplaints(); }); }, child: const Text('NEXT')),
+                      if (_currentPage > 0) 
+                        ElevatedButton(
+                          onPressed: () { setState(() { _currentPage--; _loadComplaints(); }); }, 
+                          child: const Text('PREVIOUS')
+                        ),
+                      if (_currentPage < _totalPages - 1) 
+                        ElevatedButton(
+                          onPressed: () { setState(() { _currentPage++; _loadComplaints(); }); }, 
+                          child: const Text('NEXT')
+                        ),
                     ],
                   ),
                 ),
