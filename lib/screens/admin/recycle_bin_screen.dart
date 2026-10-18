@@ -1,10 +1,12 @@
+import 'dart:convert'; // ✅ CRITICAL FIX: Added to resolve json.decode error
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../../core/api_config.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
-import '../../core/delete_confirmation_dialog.dart'; // ✅ ADD THIS IMPORT
+import '../../core/delete_confirmation_dialog.dart';
+import 'dashboard_screen.dart';
 
 class RecycleBinScreen extends StatefulWidget {
   const RecycleBinScreen({super.key});
@@ -54,7 +56,6 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     }
   }
 
-  // ✅ UPDATED: Uses the "Type 'delete'" confirmation dialog
   Future<void> _permanentDelete(int winnerId, String winnerName) async {
     final confirm = await showPermanentDeleteConfirmation(context, winnerName);
     
