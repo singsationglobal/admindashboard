@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
 import 'dashboard_screen.dart';
-import 'complaints_bin_screen.dart'; // ✅ Ensures the bin screen is accessible
 
 class ComplaintsScreen extends StatefulWidget {
   const ComplaintsScreen({super.key});
@@ -39,9 +37,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to load complaints: $e'), backgroundColor: Colors.red)
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load complaints: $e'), backgroundColor: Colors.red));
       }
     }
   }
@@ -90,7 +86,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
     if (result == true) {
       try {
         await AdminApiService.replyToComplaint(complaint['id'], replyController.text.trim(), status);
-        _loadComplaints(); // ✅ Updates the list immediately
+        _loadComplaints();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reply sent successfully'), backgroundColor: Colors.green));
         }
@@ -102,11 +98,11 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
     }
   }
 
-  // ✅ UPDATED: Moves to bin instead of permanent delete, and refreshes the list
+  // ✅ Moves to the main Recycle Bin (No popup, no local bin button)
   Future<void> _deleteComplaint(Map<String, dynamic> complaint) async {
     try {
       await AdminApiService.softDeleteComplaint(complaint['id']);
-      _loadComplaints(); // ✅ This ensures the complaint disappears from the list immediately
+      _loadComplaints();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Moved to Recycle Bin'), backgroundColor: Colors.orange)
@@ -140,12 +136,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
           onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()))
         ),
         actions: [
-          // ✅ Button to view the bin
-          IconButton(
-            icon: const Icon(Icons.delete_sweep),
-            tooltip: 'View Recycle Bin',
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ComplaintsBinScreen())),
-          ),
+          // ✅ TRASH BIN BUTTON REMOVED FROM HERE
           Container(
             margin: const EdgeInsets.only(right: 16),
             child: DropdownButton<String>(
@@ -238,7 +229,6 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                                         )
                                       ),
                                       const SizedBox(width: 8),
-                                      // ✅ UPDATED: Delete button now moves to bin
                                       Expanded(
                                         child: ElevatedButton(
                                           onPressed: () => _deleteComplaint(complaint), 
