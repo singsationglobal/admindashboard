@@ -1,11 +1,10 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import '../../core/api_config.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
-import 'dashboard_screen.dart';
+import '../../core/delete_confirmation_dialog.dart'; // ✅ ADD THIS IMPORT
 
 class RecycleBinScreen extends StatefulWidget {
   const RecycleBinScreen({super.key});
@@ -55,24 +54,15 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     }
   }
 
+  // ✅ UPDATED: Uses the "Type 'delete'" confirmation dialog
   Future<void> _permanentDelete(int winnerId, String winnerName) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Permanently Delete?', style: TextStyle(color: Colors.red)),
-        content: Text('Are you sure you want to permanently delete "$winnerName"? This cannot be undone!'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('DELETE')),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
+    final confirm = await showPermanentDeleteConfirmation(context, winnerName);
+    
+    if (confirm) {
       try {
         await AdminApiService.permanentDeleteWinner(winnerId);
         _loadDeletedWinners();
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$winnerName permanently deleted'), backgroundColor: Colors.orange));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$winnerName permanently deleted'), backgroundColor: Colors.red));
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
       }
@@ -119,7 +109,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                               children: [
                                 Expanded(child: ElevatedButton.icon(onPressed: () => _restoreWinner(winner['id'], winner['winnerName']), icon: const Icon(Icons.restore), label: const Text('RESTORE'), style: ElevatedButton.styleFrom(backgroundColor: Colors.green))),
                                 const SizedBox(width: 8),
-                                Expanded(child: ElevatedButton.icon(onPressed: () => _permanentDelete(winner['id'], winner['winnerName']), icon: const Icon(Icons.delete_forever), label: const Text('DELETE'), style: ElevatedButton.styleFrom(backgroundColor: Colors.red))),
+                                Expanded(child: ElevatedButton.icon(onPressed: () => _permanentDelete(winner['id'], winner['winnerName']), icon: const Icon(Icons.delete_forever), label: const Text('PERMANENTLY DELETE'), style: ElevatedButton.styleFrom(backgroundColor: Colors.red))),
                               ],
                             ),
                           ],
