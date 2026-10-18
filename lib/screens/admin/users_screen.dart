@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
+import '../../core/admin_local_storage.dart';
 import 'dashboard_screen.dart';
 
 class UsersScreen extends StatefulWidget {
@@ -103,7 +104,7 @@ class _UsersScreenState extends State<UsersScreen> {
     }
   }
 
-  // ✅ FIXED: Properly inside the State class, uses softDeleteUser
+  // ✅ SAFE INTEGRATION: Properly inside the State class, uses softDeleteUser
   Future<void> _deleteUser(dynamic userId, String userName) async {
     final confirm = await showDialog<bool>(
       context: context,
