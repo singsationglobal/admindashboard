@@ -90,9 +90,20 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to unban user');
   }
 
-  static Future<void> deleteUser(int userId) async {
-    final response = await http.delete(Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId'), headers: await _authHeader());
-    if (response.statusCode != 200) throw Exception('Failed to delete user');
+  // ✅ UPDATED: Soft Delete, Restore, and Permanent Delete for Users
+  static Future<void> softDeleteUser(int userId) async {
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId/bin'), headers: await _authHeader());
+    if (response.statusCode != 200) throw Exception('Failed to move user to bin');
+  }
+
+  static Future<void> restoreUser(int userId) async {
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId/restore'), headers: await _authHeader());
+    if (response.statusCode != 200) throw Exception('Failed to restore user');
+  }
+
+  static Future<void> permanentDeleteUser(int userId) async {
+    final response = await http.delete(Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId/permanent'), headers: await _authHeader());
+    if (response.statusCode != 200) throw Exception('Failed to permanently delete user');
   }
 
   static Future<Map<String, dynamic>> getSongs(int page, int size) async {
@@ -123,9 +134,20 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to unhide song');
   }
 
-  static Future<void> deleteSong(int songId) async {
-    final response = await http.delete(Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId'), headers: await _authHeader());
-    if (response.statusCode != 200) throw Exception('Failed to delete song');
+  // ✅ UPDATED: Soft Delete, Restore, and Permanent Delete for Songs
+  static Future<void> softDeleteSong(int songId) async {
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/bin'), headers: await _authHeader());
+    if (response.statusCode != 200) throw Exception('Failed to move song to bin');
+  }
+
+  static Future<void> restoreSong(int songId) async {
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/restore'), headers: await _authHeader());
+    if (response.statusCode != 200) throw Exception('Failed to restore song');
+  }
+
+  static Future<void> permanentDeleteSong(int songId) async {
+    final response = await http.delete(Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/permanent'), headers: await _authHeader());
+    if (response.statusCode != 200) throw Exception('Failed to permanently delete song');
   }
 
   static Future<Map<String, dynamic>> uploadSongFiles(int songId, {XFile? audioFile, XFile? videoFile}) async {
@@ -165,28 +187,18 @@ class AdminApiService {
     return [];
   }
 
-  // ✅ ADDED: Winner Recycle Bin Methods
   static Future<void> softDeleteWinner(int winnerId) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/bin'), 
-      headers: await _authHeader(),
-    );
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/bin'), headers: await _authHeader());
     if (response.statusCode != 200) throw Exception('Failed to move winner to bin');
   }
 
   static Future<void> restoreWinner(int winnerId) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/restore'), 
-      headers: await _authHeader(),
-    );
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/restore'), headers: await _authHeader());
     if (response.statusCode != 200) throw Exception('Failed to restore winner');
   }
 
   static Future<void> permanentDeleteWinner(int winnerId) async {
-    final response = await http.delete(
-      Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/permanent'), 
-      headers: await _authHeader(),
-    );
+    final response = await http.delete(Uri.parse('${ApiConfig.baseUrl}/admin/winners/$winnerId/permanent'), headers: await _authHeader());
     if (response.statusCode != 200) throw Exception('Failed to permanently delete winner');
   }
 
@@ -199,45 +211,29 @@ class AdminApiService {
   }
 
   static Future<Map<String, dynamic>> getDeletedComplaints(int page, int size) async {
-    final response = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/admin/complaints/bin?page=$page&size=$size'), 
-      headers: await _authHeader(),
-    );
+    final response = await http.get(Uri.parse('${ApiConfig.baseUrl}/admin/complaints/bin?page=$page&size=$size'), headers: await _authHeader());
     if (response.statusCode == 200) return json.decode(response.body);
     throw Exception('Failed to load deleted complaints');
   }
 
   static Future<Map<String, dynamic>> replyToComplaint(int complaintId, String adminReply, String status) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/reply'), 
-      headers: await _authHeader(), 
-      body: json.encode({'adminReply': adminReply, 'status': status}),
-    );
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/reply'), headers: await _authHeader(), body: json.encode({'adminReply': adminReply, 'status': status}));
     if (response.statusCode == 200) return json.decode(response.body);
     throw Exception('Failed to reply to complaint');
   }
 
   static Future<void> softDeleteComplaint(int complaintId) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/bin'), 
-      headers: await _authHeader(),
-    );
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/bin'), headers: await _authHeader());
     if (response.statusCode != 200) throw Exception('Failed to move to bin');
   }
 
   static Future<void> restoreComplaint(int complaintId) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/restore'), 
-      headers: await _authHeader(),
-    );
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/restore'), headers: await _authHeader());
     if (response.statusCode != 200) throw Exception('Failed to restore complaint');
   }
 
   static Future<void> permanentDeleteComplaint(int complaintId) async {
-    final response = await http.delete(
-      Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/permanent'), 
-      headers: await _authHeader(),
-    );
+    final response = await http.delete(Uri.parse('${ApiConfig.baseUrl}/admin/complaints/$complaintId/permanent'), headers: await _authHeader());
     if (response.statusCode != 200) throw Exception('Failed to permanently delete');
   }
 
@@ -284,6 +280,22 @@ class AdminApiService {
     } catch (e) {
       return [];
     }
+  }
+
+  // ✅ UPDATED: Soft Delete, Restore, and Permanent Delete for Splash Screens
+  static Future<void> softDeleteSplashScreen(int id) async {
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id/bin'), headers: await _authHeader());
+    if (response.statusCode != 200) throw Exception('Failed to move splash screen to bin');
+  }
+
+  static Future<void> restoreSplashScreen(int id) async {
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id/restore'), headers: await _authHeader());
+    if (response.statusCode != 200) throw Exception('Failed to restore splash screen');
+  }
+
+  static Future<void> permanentDeleteSplashScreen(int id) async {
+    final response = await http.delete(Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id/permanent'), headers: await _authHeader());
+    if (response.statusCode != 200) throw Exception('Failed to permanently delete splash screen');
   }
 
   static Future<Map<String, dynamic>> uploadSplashScreen(FilePickerResult? result, {String? imageUrl}) async {
@@ -352,32 +364,19 @@ class AdminApiService {
   }
 
   static Future<void> hideSongsBulk(List<int> songIds) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/admin/songs/hide-bulk'),
-      headers: await _authHeader(),
-      body: json.encode(songIds),
-    );
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/songs/hide-bulk'), headers: await _authHeader(), body: json.encode(songIds));
     if (response.statusCode != 200) throw Exception('Failed to hide songs in bulk');
   }
 
   static Future<void> unhideSongsBulk(List<int> songIds) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/admin/songs/unhide-bulk'),
-      headers: await _authHeader(),
-      body: json.encode(songIds),
-    );
+    final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/songs/unhide-bulk'), headers: await _authHeader(), body: json.encode(songIds));
     if (response.statusCode != 200) throw Exception('Failed to unhide songs in bulk');
   }
 
   static Future<Map<String, dynamic>> getUserCoinStats(int userId) async {
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/admin/voting/user-coins/$userId'),
-        headers: await getAuthHeader(),
-      );
-      if (response.statusCode == 200) {
-        return json.decode(response.body);
-      }
+      final response = await http.get(Uri.parse('${ApiConfig.baseUrl}/admin/voting/user-coins/$userId'), headers: await getAuthHeader());
+      if (response.statusCode == 200) return json.decode(response.body);
       throw Exception('Failed to load coin stats');
     } catch (e) {
       throw Exception('Network error: $e');
