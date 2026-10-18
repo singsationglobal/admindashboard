@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
+import '../../core/delete_confirmation_dialog.dart'; // ✅ ADD THIS IMPORT
 import 'dashboard_screen.dart';
 
 class ComplaintsBinScreen extends StatefulWidget {
@@ -48,25 +49,11 @@ class _ComplaintsBinScreenState extends State<ComplaintsBinScreen> {
     }
   }
 
-  // ✅ THIS IS THE CONFIRMATION BOX FOR PERMANENT DELETE
+  // ✅ UPDATED: Uses the "Type 'delete'" confirmation dialog
   Future<void> _permanentDelete(int id, String subject) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Permanently Delete?', style: TextStyle(color: Colors.red)),
-        content: Text('Are you sure you want to permanently delete "$subject"? This cannot be undone!'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('PERMANENTLY DELETE', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+    final confirm = await showPermanentDeleteConfirmation(context, subject);
 
-    if (confirm == true) {
+    if (confirm) {
       try {
         await AdminApiService.permanentDeleteComplaint(id);
         _loadDeletedComplaints();
