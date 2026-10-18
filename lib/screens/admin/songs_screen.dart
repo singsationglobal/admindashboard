@@ -206,7 +206,7 @@ class _SongsScreenState extends State<SongsScreen> {
     }
   }
 
-  // ✅ UPDATED: Soft Delete (Moves to Recycle Bin)
+  // ✅ FIXED: Uses softDeleteSong instead of deleteSong
   Future<void> _deleteSong(Map<String, dynamic> song) async {
     try {
       await AdminApiService.softDeleteSong(song['id']);
