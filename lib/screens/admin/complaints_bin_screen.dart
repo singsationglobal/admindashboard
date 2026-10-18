@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
-import '../../core/delete_confirmation_dialog.dart'; // ✅ ADD THIS IMPORT
+import '../../core/delete_confirmation_dialog.dart'; // ✅ REQUIRED IMPORT
 import 'dashboard_screen.dart';
 
 class ComplaintsBinScreen extends StatefulWidget {
