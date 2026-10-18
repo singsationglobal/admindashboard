@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
-import '../../core/delete_confirmation_dialog.dart'; // ✅ CRITICAL: Required for the "type delete" dialog
+import '../../core/delete_confirmation_dialog.dart'; // ✅ Uses the shared "Type delete" function
 import 'dashboard_screen.dart';
 
 class ComplaintsBinScreen extends StatefulWidget {
@@ -29,13 +29,17 @@ class _ComplaintsBinScreenState extends State<ComplaintsBinScreen> {
     try {
       final data = await AdminApiService.getDeletedComplaints(_currentPage, 20);
       setState(() {
-        _deletedComplaints = data['complaints'];
-        _totalPages = data['totalPages'];
+        _deletedComplaints = data['complaints'] ?? [];
+        _totalPages = data['totalPages'] ?? 0;
         _isLoading = false;
       });
     } catch (e) {
       setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to load bin: $e')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to load bin: $e'), backgroundColor: Colors.red)
+        );
+      }
     }
   }
 
@@ -43,13 +47,21 @@ class _ComplaintsBinScreenState extends State<ComplaintsBinScreen> {
     try {
       await AdminApiService.restoreComplaint(id);
       _loadDeletedComplaints();
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Restored successfully'), backgroundColor: Colors.green));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Restored successfully'), backgroundColor: Colors.green)
+        );
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red)
+        );
+      }
     }
   }
 
-  // ✅ UPDATED: Uses the "Type 'delete'" confirmation dialog
+  // ✅ Uses the shared "Type 'delete'" confirmation dialog
   Future<void> _permanentDelete(int id, String subject) async {
     final confirm = await showPermanentDeleteConfirmation(context, subject);
 
@@ -57,9 +69,17 @@ class _ComplaintsBinScreenState extends State<ComplaintsBinScreen> {
       try {
         await AdminApiService.permanentDeleteComplaint(id);
         _loadDeletedComplaints();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permanently deleted'), backgroundColor: Colors.red));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Permanently deleted'), backgroundColor: Colors.red)
+          );
+        }
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red)
+          );
+        }
       }
     }
   }
@@ -69,7 +89,18 @@ class _ComplaintsBinScreenState extends State<ComplaintsBinScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Complaints Recycle Bin'),
-        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back), 
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          // ✅ ADDED: Refresh button to reload the bin contents
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh Bin',
+            onPressed: _loadDeletedComplaints,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -94,8 +125,16 @@ class _ComplaintsBinScreenState extends State<ComplaintsBinScreen> {
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  IconButton(icon: const Icon(Icons.restore, color: Colors.green), onPressed: () => _restoreComplaint(complaint['id']), tooltip: 'Restore'),
-                                  IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red), onPressed: () => _permanentDelete(complaint['id'], complaint['subject']), tooltip: 'Permanent Delete'),
+                                  IconButton(
+                                    icon: const Icon(Icons.restore, color: Colors.green), 
+                                    onPressed: () => _restoreComplaint(complaint['id']), 
+                                    tooltip: 'Restore'
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.delete_forever, color: Colors.red), 
+                                    onPressed: () => _permanentDelete(complaint['id'], complaint['subject']), 
+                                    tooltip: 'Permanent Delete'
+                                  ),
                                 ],
                               ),
                             ),
@@ -108,8 +147,20 @@ class _ComplaintsBinScreenState extends State<ComplaintsBinScreen> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          if (_currentPage > 0) ElevatedButton(onPressed: () { setState(() { _currentPage--; _loadDeletedComplaints(); }); }, child: const Text('PREVIOUS')),
-                          if (_currentPage < _totalPages - 1) ElevatedButton(onPressed: () { setState(() { _currentPage++; _loadDeletedComplaints(); }); }, child: const Text('NEXT')),
+                          if (_currentPage > 0) 
+                            ElevatedButton(
+                              onPressed: () { 
+                                setState(() { _currentPage--; _loadDeletedComplaints(); }); 
+                              }, 
+                              child: const Text('PREVIOUS')
+                            ),
+                          if (_currentPage < _totalPages - 1) 
+                            ElevatedButton(
+                              onPressed: () { 
+                                setState(() { _currentPage++; _loadDeletedComplaints(); }); 
+                              }, 
+                              child: const Text('NEXT')
+                            ),
                         ],
                       ),
                     ),
