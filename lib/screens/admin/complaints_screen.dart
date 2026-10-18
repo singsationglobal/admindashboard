@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
 import 'dashboard_screen.dart';
-import 'complaints_bin_screen.dart'; // ✅ Import the new bin screen
+import 'complaints_bin_screen.dart'; // ✅ CRITICAL: This import was missing or broken
 
 class ComplaintsScreen extends StatefulWidget {
   const ComplaintsScreen({super.key});
+
   @override
   State<ComplaintsScreen> createState() => _ComplaintsScreenState();
 }
@@ -48,17 +50,33 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
-            title: const Text('Reply to Complaint'),
+            backgroundColor: AdminTheme.surface,
+            title: const Text('Reply to Complaint', style: TextStyle(color: AdminTheme.textLight)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                DropdownButtonFormField<String>(value: status, decoration: const InputDecoration(labelText: 'Status'), items: const [DropdownMenuItem(value: 'OPEN', child: Text('OPEN')), DropdownMenuItem(value: 'IN_PROGRESS', child: Text('IN PROGRESS')), DropdownMenuItem(value: 'RESOLVED', child: Text('RESOLVED'))], onChanged: (value) => setDialogState(() => status = value!)),
+                DropdownButtonFormField<String>(
+                  value: status, 
+                  decoration: const InputDecoration(labelText: 'Status', labelStyle: TextStyle(color: Colors.white70)),
+                  dropdownColor: AdminTheme.surface,
+                  items: const [
+                    DropdownMenuItem(value: 'OPEN', child: Text('OPEN')), 
+                    DropdownMenuItem(value: 'IN_PROGRESS', child: Text('IN PROGRESS')), 
+                    DropdownMenuItem(value: 'RESOLVED', child: Text('RESOLVED'))
+                  ], 
+                  onChanged: (value) => setDialogState(() => status = value!)
+                ),
                 const SizedBox(height: 12),
-                TextField(controller: replyController, decoration: const InputDecoration(labelText: 'Admin Reply', hintText: 'Type your response here...'), maxLines: 5),
+                TextField(
+                  controller: replyController, 
+                  decoration: const InputDecoration(labelText: 'Admin Reply', hintText: 'Type your response here...', labelStyle: TextStyle(color: Colors.white70)), 
+                  style: const TextStyle(color: Colors.white),
+                  maxLines: 5
+                ),
               ],
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
+              TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL', style: TextStyle(color: Colors.white70))),
               ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('SEND REPLY')),
             ],
           );
@@ -69,14 +87,14 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
       try {
         await AdminApiService.replyToComplaint(complaint['id'], replyController.text.trim(), status);
         _loadComplaints();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reply sent successfully')));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Reply sent successfully'), backgroundColor: Colors.green));
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send reply: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to send reply: $e'), backgroundColor: Colors.red));
       }
     }
   }
 
-  // ✅ UPDATED: Now moves to bin instead of permanent delete
+  // ✅ UPDATED: Moves to bin instead of permanent delete
   Future<void> _deleteComplaint(Map<String, dynamic> complaint) async {
     try {
       await AdminApiService.softDeleteComplaint(complaint['id']);
