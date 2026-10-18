@@ -107,29 +107,18 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
     }
   }
 
+  // ✅ UPDATED: Soft Delete (Moves to Recycle Bin)
   Future<void> _deleteSplashScreen(int id) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Splash Screen'),
-        content: const Text('Are you sure you want to delete this splash screen?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('DELETE')),
-        ],
-      ),
-    );
-    if (confirm == true) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleting splash screen...'), duration: Duration(seconds: 1)));
-      try {
-        final response = await http.delete(Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id'), headers: await AdminApiService.getAuthHeader());
-        if (response.statusCode == 200) {
-          await _loadAllSplashScreens();
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Splash screen deleted successfully'), backgroundColor: Colors.green));
-        }
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete: $e'), backgroundColor: Colors.red));
-      }
+    try {
+      await AdminApiService.softDeleteSplashScreen(id);
+      await _loadAllSplashScreens();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Moved to Recycle Bin'), backgroundColor: Colors.orange)
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to move to bin: $e'), backgroundColor: Colors.red)
+      );
     }
   }
 
