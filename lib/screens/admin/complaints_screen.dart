@@ -45,6 +45,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
   Future<void> _replyToComplaint(Map<String, dynamic> complaint) async {
     final replyController = TextEditingController(text: complaint['adminReply'] ?? '');
     String status = complaint['status'] ?? 'OPEN';
+    
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -52,44 +53,55 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
           return AlertDialog(
             backgroundColor: AdminTheme.surface,
             title: const Text('Reply to Complaint', style: TextStyle(color: AdminTheme.textLight)),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                DropdownButtonFormField<String>(
-                  value: status, 
-                  decoration: const InputDecoration(
-                    labelText: 'Status', 
-                    labelStyle: TextStyle(color: Colors.white70)
+            // ✅ FIXED: Wrapped in SingleChildScrollView so it works on phones when keyboard opens
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Status', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  DropdownButtonFormField<String>(
+                    value: status, 
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      filled: true,
+                      fillColor: Colors.white,
+                    ),
+                    dropdownColor: Colors.white,
+                    style: const TextStyle(color: Colors.black),
+                    items: const [
+                      DropdownMenuItem(value: 'OPEN', child: Text('OPEN')), 
+                      DropdownMenuItem(value: 'IN_PROGRESS', child: Text('IN PROGRESS')), 
+                      DropdownMenuItem(value: 'RESOLVED', child: Text('RESOLVED'))
+                    ], 
+                    onChanged: (value) => setDialogState(() => status = value!)
                   ),
-                  dropdownColor: AdminTheme.surface,
-                  style: const TextStyle(color: Colors.white),
-                  items: const [
-                    DropdownMenuItem(value: 'OPEN', child: Text('OPEN')), 
-                    DropdownMenuItem(value: 'IN_PROGRESS', child: Text('IN PROGRESS')), 
-                    DropdownMenuItem(value: 'RESOLVED', child: Text('RESOLVED'))
-                  ], 
-                  onChanged: (value) => setDialogState(() => status = value!)
-                ),
-                const SizedBox(height: 12),
-                // ✅ FIXED: White background with BLACK text so it is perfectly visible
-                TextField(
-                  controller: replyController, 
-                  style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w500),
-                  maxLines: 5,
-                  decoration: const InputDecoration(
-                    labelText: 'Admin Reply', 
-                    hintText: 'Type your response here...', 
-                    labelStyle: TextStyle(color: Colors.black87),
-                    hintStyle: TextStyle(color: Colors.black54),
-                    filled: true,
-                    fillColor: Colors.white, // Pure white background
-                    border: OutlineInputBorder(),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Color(0xFF8E44AD), width: 2), // AdminTheme.primary
+                  const SizedBox(height: 16),
+                  // ✅ FIXED: Label is now outside the box to prevent overlapping
+                  const Text('Admin Reply', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const SizedBox(height: 4),
+                  TextField(
+                    controller: replyController, 
+                    // ✅ FIXED: Text is explicitly black
+                    style: const TextStyle(color: Colors.black, fontSize: 16),
+                    maxLines: 5,
+                    minLines: 3,
+                    decoration: const InputDecoration(
+                      hintText: 'Type your response here...', 
+                      hintStyle: TextStyle(color: Colors.black54),
+                      // ✅ FIXED: White background for the box
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Color(0xFF8E44AD), width: 2),
+                      ),
+                      contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL', style: TextStyle(color: Colors.white70))),
@@ -99,6 +111,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
         },
       ),
     );
+    
     if (result == true) {
       try {
         await AdminApiService.replyToComplaint(complaint['id'], replyController.text.trim(), status);
