@@ -57,8 +57,12 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
               children: [
                 DropdownButtonFormField<String>(
                   value: status, 
-                  decoration: const InputDecoration(labelText: 'Status', labelStyle: TextStyle(color: Colors.white70)),
+                  decoration: const InputDecoration(
+                    labelText: 'Status', 
+                    labelStyle: TextStyle(color: Colors.white70)
+                  ),
                   dropdownColor: AdminTheme.surface,
+                  style: const TextStyle(color: Colors.white),
                   items: const [
                     DropdownMenuItem(value: 'OPEN', child: Text('OPEN')), 
                     DropdownMenuItem(value: 'IN_PROGRESS', child: Text('IN PROGRESS')), 
@@ -67,11 +71,23 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                   onChanged: (value) => setDialogState(() => status = value!)
                 ),
                 const SizedBox(height: 12),
+                // ✅ FIXED: White background with BLACK text so it is perfectly visible
                 TextField(
                   controller: replyController, 
-                  decoration: const InputDecoration(labelText: 'Admin Reply', hintText: 'Type your response here...', labelStyle: TextStyle(color: Colors.white70)), 
-                  style: const TextStyle(color: Colors.white),
-                  maxLines: 5
+                  style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.w500),
+                  maxLines: 5,
+                  decoration: const InputDecoration(
+                    labelText: 'Admin Reply', 
+                    hintText: 'Type your response here...', 
+                    labelStyle: TextStyle(color: Colors.black87),
+                    hintStyle: TextStyle(color: Colors.black54),
+                    filled: true,
+                    fillColor: Colors.white, // Pure white background
+                    border: OutlineInputBorder(),
+                    focusedBorder: OutlineInputBorder(
+                      borderSide: BorderSide(color: Color(0xFF8E44AD), width: 2), // AdminTheme.primary
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -135,7 +151,6 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
           onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()))
         ),
         actions: [
-          // ✅ ADDED: Refresh Button
           IconButton(
             icon: const Icon(Icons.refresh),
             tooltip: 'Refresh List',
@@ -148,6 +163,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
               hint: const Text('All', style: TextStyle(color: Colors.white70)),
               dropdownColor: AdminTheme.surface,
               underline: const SizedBox(),
+              style: const TextStyle(color: Colors.white),
               items: const [
                 DropdownMenuItem(value: '', child: Text('All', style: TextStyle(color: Colors.white))),
                 DropdownMenuItem(value: 'OPEN', child: Text('OPEN', style: TextStyle(color: Colors.white))),
