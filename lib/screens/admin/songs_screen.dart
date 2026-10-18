@@ -206,26 +206,18 @@ class _SongsScreenState extends State<SongsScreen> {
     }
   }
 
+  // ✅ UPDATED: Soft Delete (Moves to Recycle Bin)
   Future<void> _deleteSong(Map<String, dynamic> song) async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Song'),
-        content: Text('Delete "${song['title']}" by ${song['artist']}?'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('DELETE')),
-        ],
-      ),
-    );
-    if (confirm == true) {
-      try {
-        await AdminApiService.deleteSong(song['id']);
-        _loadSongs();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Song deleted successfully')));
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to delete song: $e')));
-      }
+    try {
+      await AdminApiService.softDeleteSong(song['id']);
+      _loadSongs();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Moved to Recycle Bin'), backgroundColor: Colors.orange)
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to move to bin: $e'), backgroundColor: Colors.red)
+      );
     }
   }
 
@@ -250,36 +242,25 @@ class _SongsScreenState extends State<SongsScreen> {
 
     if (confirm == true) {
       setState(() => _isBulkUpdating = true);
-      
       try {
         final idsToUpdate = List<int>.from(_selectedSongIds);
-        
         if (makeActive) {
           await AdminApiService.unhideSongsBulk(idsToUpdate);
         } else {
           await AdminApiService.hideSongsBulk(idsToUpdate);
         }
-        
         setState(() {
           _isBulkUpdating = false;
           _selectedSongIds.clear();
         });
-        
         _loadSongs();
-        
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Successfully updated ${idsToUpdate.length} songs.'),
-            backgroundColor: Colors.green,
-          ),
+          SnackBar(content: Text('Successfully updated ${idsToUpdate.length} songs.'), backgroundColor: Colors.green),
         );
       } catch (e) {
         setState(() => _isBulkUpdating = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to update songs: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Failed to update songs: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -392,7 +373,6 @@ class _SongsScreenState extends State<SongsScreen> {
                     onChanged: _filterSongs,
                   ),
                 ),
-                
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   color: AdminTheme.surface.withOpacity(0.5),
@@ -417,47 +397,22 @@ class _SongsScreenState extends State<SongsScreen> {
                     ],
                   ),
                 ),
-                
                 if (_selectedSongIds.isNotEmpty)
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     color: Colors.blue.withOpacity(0.2),
                     child: Row(
                       children: [
-                        Text(
-                          '${_selectedSongIds.length} selected',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
+                        Text('${_selectedSongIds.length} selected', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
                         const Spacer(),
-                        IconButton(
-                          icon: const Icon(Icons.visibility_off, color: Colors.orange, size: 28),
-                          tooltip: 'Hide Selected',
-                          onPressed: () => _bulkUpdateSongs(false),
-                        ),
+                        IconButton(icon: const Icon(Icons.visibility_off, color: Colors.orange, size: 28), tooltip: 'Hide Selected', onPressed: () => _bulkUpdateSongs(false)),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.visibility, color: Colors.green, size: 28),
-                          tooltip: 'Unhide Selected',
-                          onPressed: () => _bulkUpdateSongs(true),
-                        ),
+                        IconButton(icon: const Icon(Icons.visibility, color: Colors.green, size: 28), tooltip: 'Unhide Selected', onPressed: () => _bulkUpdateSongs(true)),
                         const SizedBox(width: 8),
-                        IconButton(
-                          icon: const Icon(Icons.clear, color: Colors.white70, size: 28),
-                          tooltip: 'Clear Selection',
-                          onPressed: () {
-                            setState(() {
-                              _selectedSongIds.clear();
-                            });
-                          },
-                        ),
+                        IconButton(icon: const Icon(Icons.clear, color: Colors.white70, size: 28), tooltip: 'Clear Selection', onPressed: () { setState(() { _selectedSongIds.clear(); }); }),
                       ],
                     ),
                   ),
-                
                 Expanded(
                   child: ListView.builder(
                     itemCount: _filteredSongs.length,
@@ -516,7 +471,6 @@ class _SongsScreenState extends State<SongsScreen> {
                     },
                   ),
                 ),
-                
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(
