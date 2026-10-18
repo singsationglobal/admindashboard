@@ -98,7 +98,6 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
     }
   }
 
-  // ✅ Moves to the main Recycle Bin (No popup, no local bin button)
   Future<void> _deleteComplaint(Map<String, dynamic> complaint) async {
     try {
       await AdminApiService.softDeleteComplaint(complaint['id']);
@@ -136,7 +135,12 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
           onPressed: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen()))
         ),
         actions: [
-          // ✅ TRASH BIN BUTTON REMOVED FROM HERE
+          // ✅ ADDED: Refresh Button
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Refresh List',
+            onPressed: _loadComplaints,
+          ),
           Container(
             margin: const EdgeInsets.only(right: 16),
             child: DropdownButton<String>(
