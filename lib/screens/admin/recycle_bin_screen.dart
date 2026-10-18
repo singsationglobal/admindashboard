@@ -16,13 +16,12 @@ class RecycleBinScreen extends StatefulWidget {
 }
 
 class _RecycleBinScreenState extends State<RecycleBinScreen> {
-  String _selectedType = 'Complaints'; // Default to Complaints
+  String _selectedType = 'Complaints'; 
   
   List<dynamic> _deletedWinners = [];
   List<dynamic> _deletedComplaints = [];
   bool _isLoading = true;
 
-  // ✅ ADDED: Bulk selection for complaints
   Set<int> _selectedComplaintIds = {};
 
   @override
@@ -34,7 +33,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   Future<void> _loadData() async {
     setState(() {
       _isLoading = true;
-      _selectedComplaintIds.clear(); // Clear selection on refresh
+      _selectedComplaintIds.clear(); 
     });
     try {
       if (_selectedType == 'Winners') {
@@ -65,7 +64,6 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     }
   }
 
-  // --- COMPLAINT ACTIONS ---
   Future<void> _restoreComplaint(int id) async {
     try {
       await AdminApiService.restoreComplaint(id);
@@ -89,30 +87,17 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     }
   }
 
-  // ✅ ADDED: Bulk Permanent Delete for Complaints
+  // ✅ UPDATED: Bulk delete now uses the "Type delete" confirmation dialog
   Future<void> _bulkPermanentDeleteComplaints() async {
     if (_selectedComplaintIds.isEmpty) return;
 
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: AdminTheme.surface,
-        title: const Text('Permanently Delete Selected?', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
-        content: Text('Are you sure you want to permanently delete ${_selectedComplaintIds.length} complaints? This cannot be undone.'),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCEL', style: TextStyle(color: Colors.white70))),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true), 
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red), 
-            child: const Text('DELETE', style: TextStyle(color: Colors.white))
-          ),
-        ],
-      ),
+    final confirm = await showPermanentDeleteConfirmation(
+      context, 
+      '${_selectedComplaintIds.length} selected complaints'
     );
 
     if (confirm == true) {
       try {
-        // Delete them sequentially to avoid overwhelming the server
         for (int id in _selectedComplaintIds) {
           await AdminApiService.permanentDeleteComplaint(id);
         }
@@ -121,11 +106,15 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
         });
         _loadData();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selected complaints permanently deleted'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Selected complaints permanently deleted'), backgroundColor: Colors.red)
+          );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red)
+          );
         }
       }
     }
@@ -170,7 +159,6 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
             ),
           ),
           
-          // ✅ ADDED: Bulk Action Bar for Complaints
           if (_selectedType == 'Complaints' && _selectedComplaintIds.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -218,7 +206,6 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
 
       return Column(
         children: [
-          // Select All Checkbox
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: AdminTheme.surface.withOpacity(0.5),
@@ -297,7 +284,6 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
         ],
       );
     } else {
-      // Winners View (Unchanged)
       if (_deletedWinners.isEmpty) {
         return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.delete_sweep, size: 80, color: Colors.grey), SizedBox(height: 16), Text('No deleted winners', style: TextStyle(fontSize: 18, color: Colors.grey))]));
       }
