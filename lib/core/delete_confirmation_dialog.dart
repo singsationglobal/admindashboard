@@ -16,7 +16,7 @@ Future<bool> showPermanentDeleteConfirmation(BuildContext context, String itemNa
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Are you sure you want to permanently delete "$itemName"? This action cannot be undone and will remove it from the system and storage bucket.',
+              'Are you sure you want to permanently delete "$itemName"? This action cannot be undone.',
               style: const TextStyle(color: Colors.white70),
             ),
             const SizedBox(height: 16),
@@ -25,12 +25,17 @@ Future<bool> showPermanentDeleteConfirmation(BuildContext context, String itemNa
             TextField(
               controller: controller,
               autofocus: true,
-              style: const TextStyle(color: Colors.white),
+              // ✅ FORCED BLACK TEXT AND CURSOR SO IT IS ALWAYS VISIBLE
+              style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+              cursorColor: Colors.black,
               decoration: const InputDecoration(
                 hintText: 'delete',
-                hintStyle: TextStyle(color: Colors.white54),
+                hintStyle: TextStyle(color: Colors.black54, fontSize: 16),
+                // ✅ FORCED PURE WHITE BACKGROUND
+                filled: true,
+                fillColor: Colors.white,
                 border: OutlineInputBorder(),
-                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red)),
+                focusedBorder: OutlineInputBorder(borderSide: BorderSide(color: Colors.red, width: 2)),
               ),
               onChanged: (value) {
                 setState(() {
@@ -50,7 +55,7 @@ Future<bool> showPermanentDeleteConfirmation(BuildContext context, String itemNa
             style: ElevatedButton.styleFrom(
               backgroundColor: isValid ? Colors.red : Colors.grey,
             ),
-            child: const Text('PERMANENTLY DELETE', style: TextStyle(color: Colors.white)),
+            child: const Text('PERMANENTLY DELETE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
