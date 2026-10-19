@@ -280,7 +280,6 @@ class AdminApiService {
     }
   }
 
-  // ✅ ADDED: Get Deleted Splash Screens for Recycle Bin
   static Future<List<dynamic>> getDeletedSplashScreens() async {
     final response = await http.get(
       Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/deleted'),
@@ -305,7 +304,8 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to permanently delete splash screen');
   }
 
-  static Future<Map<String, dynamic>> uploadSplashScreen(FilePickerResult? result, {String? imageUrl}) async {
+  // ✅ UPDATED: Added cloudProvider parameter
+  static Future<Map<String, dynamic>> uploadSplashScreen(FilePickerResult? result, {String? imageUrl, String cloudProvider = 'oracle'}) async {
     if (imageUrl != null && imageUrl.isNotEmpty) {
       final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/url'), headers: await _authHeader(), body: json.encode({'imageUrl': imageUrl}));
       if (response.statusCode == 200) return json.decode(response.body);
@@ -314,6 +314,10 @@ class AdminApiService {
     if (result == null || result.files.isEmpty) throw Exception('No file selected');
     var request = http.MultipartRequest('POST', Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/upload'));
     request.headers.addAll(await _authHeader());
+    
+    // ✅ ADDED: Send cloud provider choice to backend
+    request.fields['cloudProvider'] = cloudProvider;
+
     final file = result.files.first;
     final bytes = file.bytes;
     final filename = file.name;
