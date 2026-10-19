@@ -32,7 +32,9 @@ class _SongsScreenState extends State<SongsScreen> {
   final ImagePicker _picker = ImagePicker();
   XFile? _selectedAudioFile;
   XFile? _selectedVideoFile;
+  XFile? _selectedCoverFile; // ✅ ADDED
   bool _isUploadingFiles = false;
+  String _selectedCloudProvider = 'oracle'; // ✅ ADDED
 
   @override
   void initState() {
@@ -104,15 +106,25 @@ class _SongsScreenState extends State<SongsScreen> {
     }
   }
 
+  // ✅ ADDED: Pick Cover Image
+  Future<void> _pickCoverFile() async {
+    try {
+      final XFile? file = await _picker.pickImage(source: ImageSource.gallery);
+      if (file != null) setState(() => _selectedCoverFile = file);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to pick cover image: $e')));
+    }
+  }
+
   Future<void> _addSong() async {
     if (_formKey.currentState!.validate()) {
       final songData = {'title': _titleController.text.trim(), 'artist': _artistController.text.trim(), 'url': _urlController.text.trim(), 'video': _videoController.text.trim()};
       try {
         final result = await AdminApiService.createSong(songData);
         final songId = result['id'];
-        if (_selectedAudioFile != null || _selectedVideoFile != null) {
+        if (_selectedAudioFile != null || _selectedVideoFile != null || _selectedCoverFile != null) {
           setState(() => _isUploadingFiles = true);
-          await AdminApiService.uploadSongFiles(songId, audioFile: _selectedAudioFile, videoFile: _selectedVideoFile);
+          await AdminApiService.uploadSongFiles(songId, audioFile: _selectedAudioFile, videoFile: _selectedVideoFile, coverFile: _selectedCoverFile, cloudProvider: _selectedCloudProvider);
           setState(() => _isUploadingFiles = false);
         }
         _clearForm();
@@ -133,6 +145,7 @@ class _SongsScreenState extends State<SongsScreen> {
     _videoController.text = song['video'] ?? '';
     _selectedAudioFile = null;
     _selectedVideoFile = null;
+    _selectedCoverFile = null;
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -147,14 +160,32 @@ class _SongsScreenState extends State<SongsScreen> {
               const SizedBox(height: 12),
               Text('Upload Files (Optional)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
               const SizedBox(height: 12),
+              // ✅ ADDED: Cloud Provider Toggle
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(child: ElevatedButton.icon(onPressed: _pickAudioFile, icon: const Icon(Icons.audio_file), label: Text(_selectedAudioFile != null ? '✓ ${_selectedAudioFile!.name}' : 'Select Audio', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(140, 40)))),
+                  const Text('Upload to: ', style: TextStyle(color: AdminTheme.textLight)),
                   const SizedBox(width: 8),
-                  Expanded(child: ElevatedButton.icon(onPressed: _pickVideoFile, icon: const Icon(Icons.video_file), label: Text(_selectedVideoFile != null ? '✓ ${_selectedVideoFile!.name}' : 'Select Video', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(140, 40)))),
+                  ChoiceChip(label: const Text('Oracle'), selected: _selectedCloudProvider == 'oracle', onSelected: (s) => setState(() => _selectedCloudProvider = 'oracle')),
+                  const SizedBox(width: 8),
+                  ChoiceChip(label: const Text('Google'), selected: _selectedCloudProvider == 'google', onSelected: (s) => setState(() => _selectedCloudProvider = 'google')),
                 ],
               ),
-              if (_selectedAudioFile != null || _selectedVideoFile != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text('Files will be uploaded after saving', style: TextStyle(color: Colors.grey[400], fontSize: 11))),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: ElevatedButton.icon(onPressed: _pickAudioFile, icon: const Icon(Icons.audio_file), label: Text(_selectedAudioFile != null ? '✓ Audio' : 'Select Audio', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(140, 40)))),
+                  const SizedBox(width: 8),
+                  Expanded(child: ElevatedButton.icon(onPressed: _pickVideoFile, icon: const Icon(Icons.video_file), label: Text(_selectedVideoFile != null ? '✓ Video' : 'Select Video', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(140, 40)))),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // ✅ ADDED: Cover Image Picker
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(onPressed: _pickCoverFile, icon: const Icon(Icons.image), label: Text(_selectedCoverFile != null ? '✓ Cover Image Selected' : 'Select Cover Image', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.secondary, padding: const EdgeInsets.symmetric(vertical: 12))),
+              ),
+              if (_selectedAudioFile != null || _selectedVideoFile != null || _selectedCoverFile != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text('Files will be uploaded after saving', style: TextStyle(color: Colors.grey[400], fontSize: 11))),
             ],
           ),
         ),
@@ -168,9 +199,9 @@ class _SongsScreenState extends State<SongsScreen> {
                       final songData = {'title': _titleController.text.trim(), 'artist': _artistController.text.trim(), 'url': _urlController.text.trim(), 'video': _videoController.text.trim()};
                       try {
                         await AdminApiService.updateSong(song['id'], songData);
-                        if (_selectedAudioFile != null || _selectedVideoFile != null) {
+                        if (_selectedAudioFile != null || _selectedVideoFile != null || _selectedCoverFile != null) {
                           setState(() => _isUploadingFiles = true);
-                          await AdminApiService.uploadSongFiles(song['id'], audioFile: _selectedAudioFile, videoFile: _selectedVideoFile);
+                          await AdminApiService.uploadSongFiles(song['id'], audioFile: _selectedAudioFile, videoFile: _selectedVideoFile, coverFile: _selectedCoverFile, cloudProvider: _selectedCloudProvider);
                           setState(() => _isUploadingFiles = false);
                         }
                         _clearForm();
@@ -206,7 +237,6 @@ class _SongsScreenState extends State<SongsScreen> {
     }
   }
 
-  // ✅ SAFE INTEGRATION: Uses softDeleteSong instead of deleteSong
   Future<void> _deleteSong(Map<String, dynamic> song) async {
     try {
       await AdminApiService.softDeleteSong(song['id']);
@@ -291,6 +321,7 @@ class _SongsScreenState extends State<SongsScreen> {
     _videoController.clear();
     _selectedAudioFile = null;
     _selectedVideoFile = null;
+    _selectedCoverFile = null;
   }
 
   void _showAddSongDialog() {
@@ -309,14 +340,32 @@ class _SongsScreenState extends State<SongsScreen> {
               const SizedBox(height: 12),
               Text('Upload Files (Optional)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
               const SizedBox(height: 12),
+              // ✅ ADDED: Cloud Provider Toggle
               Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(child: ElevatedButton.icon(onPressed: _pickAudioFile, icon: const Icon(Icons.audio_file), label: Text(_selectedAudioFile != null ? '✓ ${_selectedAudioFile!.name}' : 'Select Audio', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(140, 40)))),
+                  const Text('Upload to: ', style: TextStyle(color: AdminTheme.textLight)),
                   const SizedBox(width: 8),
-                  Expanded(child: ElevatedButton.icon(onPressed: _pickVideoFile, icon: const Icon(Icons.video_file), label: Text(_selectedVideoFile != null ? '✓ ${_selectedVideoFile!.name}' : 'Select Video', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(140, 40)))),
+                  ChoiceChip(label: const Text('Oracle'), selected: _selectedCloudProvider == 'oracle', onSelected: (s) => setState(() => _selectedCloudProvider = 'oracle')),
+                  const SizedBox(width: 8),
+                  ChoiceChip(label: const Text('Google'), selected: _selectedCloudProvider == 'google', onSelected: (s) => setState(() => _selectedCloudProvider = 'google')),
                 ],
               ),
-              if (_selectedAudioFile != null || _selectedVideoFile != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text('Files will be uploaded after saving', style: TextStyle(color: Colors.grey[400], fontSize: 11))),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(child: ElevatedButton.icon(onPressed: _pickAudioFile, icon: const Icon(Icons.audio_file), label: Text(_selectedAudioFile != null ? '✓ Audio' : 'Select Audio', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(140, 40)))),
+                  const SizedBox(width: 8),
+                  Expanded(child: ElevatedButton.icon(onPressed: _pickVideoFile, icon: const Icon(Icons.video_file), label: Text(_selectedVideoFile != null ? '✓ Video' : 'Select Video', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(140, 40)))),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // ✅ ADDED: Cover Image Picker
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(onPressed: _pickCoverFile, icon: const Icon(Icons.image), label: Text(_selectedCoverFile != null ? '✓ Cover Image Selected' : 'Select Cover Image', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.secondary, padding: const EdgeInsets.symmetric(vertical: 12))),
+              ),
+              if (_selectedAudioFile != null || _selectedVideoFile != null || _selectedCoverFile != null) Padding(padding: const EdgeInsets.only(top: 8), child: Text('Files will be uploaded after saving', style: TextStyle(color: Colors.grey[400], fontSize: 11))),
             ],
           ),
         ),
@@ -447,8 +496,9 @@ class _SongsScreenState extends State<SongsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(song['artist'] ?? 'Unknown', style: TextStyle(color: Colors.grey[400])),
-                              if (song['audioFileUrl'] != null) Text('🎵 Audio: Uploaded', style: TextStyle(color: Colors.green[400], fontSize: 11)),
+                              if (song['audioFileUrl'] != null) Text(' Audio: Uploaded', style: TextStyle(color: Colors.green[400], fontSize: 11)),
                               if (song['videoFileUrl'] != null) Text('🎬 Video: Uploaded', style: TextStyle(color: Colors.blue[400], fontSize: 11)),
+                              if (song['coverImageUrl'] != null) Text('🖼️ Cover: Uploaded', style: TextStyle(color: Colors.purple[400], fontSize: 11)),
                             ],
                           ),
                           trailing: Wrap(
