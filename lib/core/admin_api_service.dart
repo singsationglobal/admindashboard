@@ -90,7 +90,6 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to unban user');
   }
 
-  // ✅ UPDATED: Soft Delete, Restore, and Permanent Delete for Users
   static Future<void> softDeleteUser(int userId) async {
     final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/users/$userId/bin'), headers: await _authHeader());
     if (response.statusCode != 200) throw Exception('Failed to move user to bin');
@@ -134,7 +133,6 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to unhide song');
   }
 
-  // ✅ UPDATED: Soft Delete, Restore, and Permanent Delete for Songs
   static Future<void> softDeleteSong(int songId) async {
     final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/bin'), headers: await _authHeader());
     if (response.statusCode != 200) throw Exception('Failed to move song to bin');
@@ -282,7 +280,16 @@ class AdminApiService {
     }
   }
 
-  // ✅ UPDATED: Soft Delete, Restore, and Permanent Delete for Splash Screens
+  // ✅ ADDED: Get Deleted Splash Screens for Recycle Bin
+  static Future<List<dynamic>> getDeletedSplashScreens() async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/deleted'),
+      headers: await getAuthHeader(),
+    );
+    if (response.statusCode == 200) return json.decode(response.body);
+    throw Exception('Failed to load deleted splash screens');
+  }
+
   static Future<void> softDeleteSplashScreen(int id) async {
     final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id/bin'), headers: await _authHeader());
     if (response.statusCode != 200) throw Exception('Failed to move splash screen to bin');
