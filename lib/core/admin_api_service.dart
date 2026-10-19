@@ -148,9 +148,14 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to permanently delete song');
   }
 
-  static Future<Map<String, dynamic>> uploadSongFiles(int songId, {XFile? audioFile, XFile? videoFile}) async {
+  // ✅ UPDATED: Added coverFile and cloudProvider parameters
+  static Future<Map<String, dynamic>> uploadSongFiles(int songId, {XFile? audioFile, XFile? videoFile, XFile? coverFile, String cloudProvider = 'oracle'}) async {
     var request = http.MultipartRequest('POST', Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/upload-files'));
     request.headers.addAll(await _authHeader());
+    
+    // ✅ ADDED: Send cloud provider choice to backend
+    request.fields['cloudProvider'] = cloudProvider;
+
     if (audioFile != null) {
       if (kIsWeb) {
         final bytes = await audioFile.readAsBytes();
@@ -165,6 +170,15 @@ class AdminApiService {
         request.files.add(http.MultipartFile.fromBytes('videoFile', bytes, filename: videoFile.name, contentType: MediaType('video', 'mp4')));
       } else {
         request.files.add(await http.MultipartFile.fromPath('videoFile', videoFile.path, contentType: MediaType('video', 'mp4')));
+      }
+    }
+    // ✅ ADDED: Cover Image Upload Logic
+    if (coverFile != null) {
+      if (kIsWeb) {
+        final bytes = await coverFile.readAsBytes();
+        request.files.add(http.MultipartFile.fromBytes('coverImage', bytes, filename: coverFile.name, contentType: MediaType('image', 'jpeg')));
+      } else {
+        request.files.add(await http.MultipartFile.fromPath('coverImage', coverFile.path, contentType: MediaType('image', 'jpeg')));
       }
     }
     final response = await request.send();
@@ -304,7 +318,6 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to permanently delete splash screen');
   }
 
-  // ✅ UPDATED: Added cloudProvider parameter
   static Future<Map<String, dynamic>> uploadSplashScreen(FilePickerResult? result, {String? imageUrl, String cloudProvider = 'oracle'}) async {
     if (imageUrl != null && imageUrl.isNotEmpty) {
       final response = await http.post(Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/url'), headers: await _authHeader(), body: json.encode({'imageUrl': imageUrl}));
@@ -314,8 +327,6 @@ class AdminApiService {
     if (result == null || result.files.isEmpty) throw Exception('No file selected');
     var request = http.MultipartRequest('POST', Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/upload'));
     request.headers.addAll(await _authHeader());
-    
-    // ✅ ADDED: Send cloud provider choice to backend
     request.fields['cloudProvider'] = cloudProvider;
 
     final file = result.files.first;
