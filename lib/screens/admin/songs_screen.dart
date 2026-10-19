@@ -32,9 +32,9 @@ class _SongsScreenState extends State<SongsScreen> {
   final ImagePicker _picker = ImagePicker();
   XFile? _selectedAudioFile;
   XFile? _selectedVideoFile;
-  XFile? _selectedCoverFile; // ✅ ADDED
+  XFile? _selectedCoverFile;
   bool _isUploadingFiles = false;
-  String _selectedCloudProvider = 'oracle'; // ✅ ADDED
+  String _selectedCloudProvider = 'oracle';
 
   @override
   void initState() {
@@ -106,7 +106,6 @@ class _SongsScreenState extends State<SongsScreen> {
     }
   }
 
-  // ✅ ADDED: Pick Cover Image
   Future<void> _pickCoverFile() async {
     try {
       final XFile? file = await _picker.pickImage(source: ImageSource.gallery);
@@ -160,7 +159,6 @@ class _SongsScreenState extends State<SongsScreen> {
               const SizedBox(height: 12),
               Text('Upload Files (Optional)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
               const SizedBox(height: 12),
-              // ✅ ADDED: Cloud Provider Toggle
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -180,7 +178,6 @@ class _SongsScreenState extends State<SongsScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              // ✅ ADDED: Cover Image Picker
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(onPressed: _pickCoverFile, icon: const Icon(Icons.image), label: Text(_selectedCoverFile != null ? '✓ Cover Image Selected' : 'Select Cover Image', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.secondary, padding: const EdgeInsets.symmetric(vertical: 12))),
@@ -340,7 +337,6 @@ class _SongsScreenState extends State<SongsScreen> {
               const SizedBox(height: 12),
               Text('Upload Files (Optional)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
               const SizedBox(height: 12),
-              // ✅ ADDED: Cloud Provider Toggle
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -360,7 +356,6 @@ class _SongsScreenState extends State<SongsScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              // ✅ ADDED: Cover Image Picker
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(onPressed: _pickCoverFile, icon: const Icon(Icons.image), label: Text(_selectedCoverFile != null ? '✓ Cover Image Selected' : 'Select Cover Image', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.secondary, padding: const EdgeInsets.symmetric(vertical: 12))),
@@ -468,6 +463,7 @@ class _SongsScreenState extends State<SongsScreen> {
                     itemBuilder: (context, index) {
                       final song = _filteredSongs[index];
                       final isActive = song['active'] ?? true;
+                      final coverUrl = song['coverImageUrl'] as String?;
                       return Card(
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         color: AdminTheme.surface,
@@ -488,7 +484,11 @@ class _SongsScreenState extends State<SongsScreen> {
                                 },
                               ),
                               const SizedBox(width: 4),
-                              CircleAvatar(backgroundColor: isActive ? Colors.green : Colors.grey, child: const Icon(Icons.music_note, color: Colors.white, size: 20)),
+                              CircleAvatar(
+                                backgroundColor: isActive ? Colors.green : Colors.grey,
+                                backgroundImage: coverUrl != null && coverUrl.isNotEmpty ? NetworkImage(coverUrl) : null,
+                                child: coverUrl == null || coverUrl.isEmpty ? const Icon(Icons.music_note, color: Colors.white, size: 20) : null,
+                              ),
                             ],
                           ),
                           title: Text(song['title'] ?? 'Unknown', style: const TextStyle(color: AdminTheme.textLight)),
@@ -496,9 +496,9 @@ class _SongsScreenState extends State<SongsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(song['artist'] ?? 'Unknown', style: TextStyle(color: Colors.grey[400])),
-                              if (song['audioFileUrl'] != null) Text(' Audio: Uploaded', style: TextStyle(color: Colors.green[400], fontSize: 11)),
-                              if (song['videoFileUrl'] != null) Text('🎬 Video: Uploaded', style: TextStyle(color: Colors.blue[400], fontSize: 11)),
-                              if (song['coverImageUrl'] != null) Text('🖼️ Cover: Uploaded', style: TextStyle(color: Colors.purple[400], fontSize: 11)),
+                              if (song['url'] != null && song['url'].toString().isNotEmpty) Text('🎵 Audio: Uploaded', style: TextStyle(color: Colors.green[400], fontSize: 11)),
+                              if (song['video'] != null && song['video'].toString().isNotEmpty) Text('🎬 Video: Uploaded', style: TextStyle(color: Colors.blue[400], fontSize: 11)),
+                              if (coverUrl != null && coverUrl.isNotEmpty) Text('🖼️ Cover: Uploaded', style: TextStyle(color: Colors.purple[400], fontSize: 11)),
                             ],
                           ),
                           trailing: Wrap(
