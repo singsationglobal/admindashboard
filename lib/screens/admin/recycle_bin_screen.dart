@@ -20,6 +20,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   
   List<dynamic> _deletedWinners = [];
   List<dynamic> _deletedComplaints = [];
+  List<dynamic> _deletedSplashScreens = [];
   bool _isLoading = true;
 
   Set<int> _selectedComplaintIds = {};
@@ -49,12 +50,25 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
         } else {
           throw Exception('Failed to load deleted winners');
         }
-      } else {
+      } else if (_selectedType == 'Complaints') {
         final data = await AdminApiService.getDeletedComplaints(0, 100);
         setState(() {
           _deletedComplaints = data['complaints'] ?? [];
           _isLoading = false;
         });
+      } else if (_selectedType == 'Splash Screens') {
+        final response = await http.get(
+          Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/deleted'),
+          headers: await AdminApiService.getAuthHeader(),
+        );
+        if (response.statusCode == 200) {
+          setState(() {
+            _deletedSplashScreens = json.decode(response.body);
+            _isLoading = false;
+          });
+        } else {
+          throw Exception('Failed to load deleted splash screens');
+        }
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -68,7 +82,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     try {
       await AdminApiService.restoreComplaint(id);
       _loadData();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Complaint restored!'), backgroundColor: Colors.green));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Restored!'), backgroundColor: Colors.green));
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     }
@@ -80,42 +94,53 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
       try {
         await AdminApiService.permanentDeleteComplaint(id);
         _loadData();
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Complaint permanently deleted'), backgroundColor: Colors.red));
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permanently deleted'), backgroundColor: Colors.red));
       } catch (e) {
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
       }
     }
   }
 
-  // ✅ UPDATED: Bulk delete now uses the "Type delete" confirmation dialog
   Future<void> _bulkPermanentDeleteComplaints() async {
     if (_selectedComplaintIds.isEmpty) return;
-
-    final confirm = await showPermanentDeleteConfirmation(
-      context, 
-      '${_selectedComplaintIds.length} selected complaints'
-    );
-
+    final confirm = await showPermanentDeleteConfirmation(context, '${_selectedComplaintIds.length} selected complaints');
     if (confirm == true) {
       try {
         for (int id in _selectedComplaintIds) {
           await AdminApiService.permanentDeleteComplaint(id);
         }
-        setState(() {
-          _selectedComplaintIds.clear();
-        });
+        setState(() { _selectedComplaintIds.clear(); });
         _loadData();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Selected complaints permanently deleted'), backgroundColor: Colors.red)
-          );
-        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selected complaints deleted'), backgroundColor: Colors.red));
       } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red)
-          );
-        }
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
+      }
+    }
+  }
+
+  Future<void> _restoreSplashScreen(int id) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id/restore'),
+        headers: await AdminApiService.getAuthHeader(),
+      );
+      if (response.statusCode == 200) { _loadData(); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Restored!'), backgroundColor: Colors.green)); }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
+    }
+  }
+
+  Future<void> _permanentDeleteSplashScreen(int id) async {
+    final confirm = await showPermanentDeleteConfirmation(context, 'Splash Screen ID $id');
+    if (confirm) {
+      try {
+        final response = await http.delete(
+          Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id'),
+          headers: await AdminApiService.getAuthHeader(),
+        );
+        if (response.statusCode == 200) { _loadData(); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permanently deleted'), backgroundColor: Colors.red)); }
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
       }
     }
   }
@@ -126,9 +151,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
       appBar: AppBar(
         title: const Text('Recycle Bin'),
         leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
-        actions: [
-          IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData, tooltip: 'Refresh'),
-        ],
+        actions: [IconButton(icon: const Icon(Icons.refresh), onPressed: _loadData, tooltip: 'Refresh')],
       ),
       body: Column(
         children: [
@@ -147,18 +170,15 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                   items: const [
                     DropdownMenuItem(value: 'Complaints', child: Text('Deleted Complaints')),
                     DropdownMenuItem(value: 'Winners', child: Text('Deleted Winners')),
+                    DropdownMenuItem(value: 'Splash Screens', child: Text('Deleted Splash Screens')),
                   ],
                   onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _selectedType = value);
-                      _loadData();
-                    }
+                    if (value != null) { setState(() => _selectedType = value); _loadData(); }
                   },
                 ),
               ],
             ),
           ),
-          
           if (_selectedType == 'Complaints' && _selectedComplaintIds.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -167,29 +187,14 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                 children: [
                   Text('${_selectedComplaintIds.length} selected', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
                   const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.delete_forever, color: Colors.red, size: 28),
-                    tooltip: 'Delete Selected',
-                    onPressed: _bulkPermanentDeleteComplaints,
-                  ),
+                  IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red, size: 28), tooltip: 'Delete Selected', onPressed: _bulkPermanentDeleteComplaints),
                   const SizedBox(width: 8),
-                  IconButton(
-                    icon: const Icon(Icons.clear, color: Colors.white70, size: 28),
-                    tooltip: 'Clear Selection',
-                    onPressed: () {
-                      setState(() {
-                        _selectedComplaintIds.clear();
-                      });
-                    },
-                  ),
+                  IconButton(icon: const Icon(Icons.clear, color: Colors.white70, size: 28), tooltip: 'Clear Selection', onPressed: () { setState(() { _selectedComplaintIds.clear(); }); }),
                 ],
               ),
             ),
-
           Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _buildList(),
+            child: _isLoading ? const Center(child: CircularProgressIndicator()) : _buildList(),
           ),
         ],
       ),
@@ -198,12 +203,8 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
 
   Widget _buildList() {
     if (_selectedType == 'Complaints') {
-      if (_deletedComplaints.isEmpty) {
-        return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.delete_sweep, size: 80, color: Colors.grey), SizedBox(height: 16), Text('No deleted complaints', style: TextStyle(fontSize: 18, color: Colors.grey))]));
-      }
-      
+      if (_deletedComplaints.isEmpty) return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.delete_sweep, size: 80, color: Colors.grey), SizedBox(height: 16), Text('No deleted complaints', style: TextStyle(fontSize: 18, color: Colors.grey))]));
       final allSelected = _deletedComplaints.isNotEmpty && _selectedComplaintIds.length == _deletedComplaints.length;
-
       return Column(
         children: [
           Container(
@@ -211,19 +212,12 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
             color: AdminTheme.surface.withOpacity(0.5),
             child: Row(
               children: [
-                Checkbox(
-                  value: allSelected,
-                  tristate: true,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      if (value == true) {
-                        _selectedComplaintIds.addAll(_deletedComplaints.map((c) => c['id'] as int));
-                      } else {
-                        _selectedComplaintIds.clear();
-                      }
-                    });
-                  },
-                ),
+                Checkbox(value: allSelected, tristate: true, onChanged: (bool? value) {
+                  setState(() {
+                    if (value == true) { _selectedComplaintIds.addAll(_deletedComplaints.map((c) => c['id'] as int)); } 
+                    else { _selectedComplaintIds.clear(); }
+                  });
+                }),
                 const Text('Select All', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ],
             ),
@@ -245,18 +239,12 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                       children: [
                         Row(
                           children: [
-                            Checkbox(
-                              value: _selectedComplaintIds.contains(complaint['id']),
-                              onChanged: (bool? value) {
-                                setState(() {
-                                  if (value == true) {
-                                    _selectedComplaintIds.add(complaint['id'] as int);
-                                  } else {
-                                    _selectedComplaintIds.remove(complaint['id']);
-                                  }
-                                });
-                              },
-                            ),
+                            Checkbox(value: _selectedComplaintIds.contains(complaint['id']), onChanged: (bool? value) {
+                              setState(() {
+                                if (value == true) { _selectedComplaintIds.add(complaint['id'] as int); } 
+                                else { _selectedComplaintIds.remove(complaint['id']); }
+                              });
+                            }),
                             const SizedBox(width: 8),
                             Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(20)), child: Text(complaint['status'] ?? 'OPEN', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
                             const Spacer(),
@@ -283,10 +271,38 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
           ),
         ],
       );
-    } else {
-      if (_deletedWinners.isEmpty) {
-        return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.delete_sweep, size: 80, color: Colors.grey), SizedBox(height: 16), Text('No deleted winners', style: TextStyle(fontSize: 18, color: Colors.grey))]));
-      }
+    } 
+    
+    else if (_selectedType == 'Splash Screens') {
+      if (_deletedSplashScreens.isEmpty) return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.delete_sweep, size: 80, color: Colors.grey), SizedBox(height: 16), Text('No deleted splash screens', style: TextStyle(fontSize: 18, color: Colors.grey))]));
+      return ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _deletedSplashScreens.length,
+        itemBuilder: (context, index) {
+          final screen = _deletedSplashScreens[index];
+          final deletedAt = screen['deletedAt'] != null ? DateFormat('dd MMM yyyy HH:mm').format(DateTime.parse(screen['deletedAt'])) : 'Unknown';
+          return Card(
+            color: AdminTheme.surface,
+            margin: const EdgeInsets.only(bottom: 12),
+            child: ListTile(
+              leading: ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(screen['imageUrl'], width: 50, height: 80, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.broken_image))),
+              title: Text('ID: ${screen['id']}', style: const TextStyle(color: AdminTheme.textLight)),
+              subtitle: Text('Deleted: $deletedAt', style: TextStyle(color: Colors.red.shade300, fontSize: 12)),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(icon: const Icon(Icons.restore, color: Colors.green), onPressed: () => _restoreSplashScreen(screen['id'])),
+                  IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red), onPressed: () => _permanentDeleteSplashScreen(screen['id'])),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    } 
+    
+    else { // Winners
+      if (_deletedWinners.isEmpty) return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.delete_sweep, size: 80, color: Colors.grey), SizedBox(height: 16), Text('No deleted winners', style: TextStyle(fontSize: 18, color: Colors.grey))]));
       return ListView.builder(
         padding: const EdgeInsets.all(16),
         itemCount: _deletedWinners.length,
