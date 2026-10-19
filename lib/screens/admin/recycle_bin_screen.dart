@@ -24,6 +24,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
   bool _isLoading = true;
 
   Set<int> _selectedComplaintIds = {};
+  Set<int> _selectedSplashScreenIds = {}; // ✅ ADDED for Splash Screens
 
   @override
   void initState() {
@@ -35,69 +36,38 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     setState(() {
       _isLoading = true;
       _selectedComplaintIds.clear(); 
+      _selectedSplashScreenIds.clear();
     });
     try {
       if (_selectedType == 'Winners') {
-        final response = await http.get(
-          Uri.parse('${ApiConfig.baseUrl}/admin/winners/deleted'),
-          headers: await AdminApiService.getAuthHeader(),
-        );
+        final response = await http.get(Uri.parse('${ApiConfig.baseUrl}/admin/winners/deleted'), headers: await AdminApiService.getAuthHeader());
         if (response.statusCode == 200) {
-          setState(() {
-            _deletedWinners = json.decode(response.body);
-            _isLoading = false;
-          });
-        } else {
-          throw Exception('Failed to load deleted winners');
-        }
+          setState(() { _deletedWinners = json.decode(response.body); _isLoading = false; });
+        } else { throw Exception('Failed to load deleted winners'); }
       } else if (_selectedType == 'Complaints') {
         final data = await AdminApiService.getDeletedComplaints(0, 100);
-        setState(() {
-          _deletedComplaints = data['complaints'] ?? [];
-          _isLoading = false;
-        });
+        setState(() { _deletedComplaints = data['complaints'] ?? []; _isLoading = false; });
       } else if (_selectedType == 'Splash Screens') {
-        final response = await http.get(
-          Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/deleted'),
-          headers: await AdminApiService.getAuthHeader(),
-        );
-        if (response.statusCode == 200) {
-          setState(() {
-            _deletedSplashScreens = json.decode(response.body);
-            _isLoading = false;
-          });
-        } else {
-          throw Exception('Failed to load deleted splash screens');
-        }
+        final data = await AdminApiService.getDeletedSplashScreens();
+        setState(() { _deletedSplashScreens = data; _isLoading = false; });
       }
     } catch (e) {
       setState(() => _isLoading = false);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
-      }
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
     }
   }
 
+  // --- COMPLAINT ACTIONS ---
   Future<void> _restoreComplaint(int id) async {
-    try {
-      await AdminApiService.restoreComplaint(id);
-      _loadData();
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Restored!'), backgroundColor: Colors.green));
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
-    }
+    try { await AdminApiService.restoreComplaint(id); _loadData(); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Restored!'), backgroundColor: Colors.green)); } 
+    catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red)); }
   }
 
   Future<void> _permanentDeleteComplaint(int id, String subject) async {
     final confirm = await showPermanentDeleteConfirmation(context, subject);
     if (confirm) {
-      try {
-        await AdminApiService.permanentDeleteComplaint(id);
-        _loadData();
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permanently deleted'), backgroundColor: Colors.red));
-      } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
-      }
+      try { await AdminApiService.permanentDeleteComplaint(id); _loadData(); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permanently deleted'), backgroundColor: Colors.red)); } 
+      catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red)); }
     }
   }
 
@@ -106,42 +76,38 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     final confirm = await showPermanentDeleteConfirmation(context, '${_selectedComplaintIds.length} selected complaints');
     if (confirm == true) {
       try {
-        for (int id in _selectedComplaintIds) {
-          await AdminApiService.permanentDeleteComplaint(id);
-        }
+        for (int id in _selectedComplaintIds) { await AdminApiService.permanentDeleteComplaint(id); }
         setState(() { _selectedComplaintIds.clear(); });
         _loadData();
         if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selected complaints deleted'), backgroundColor: Colors.red));
-      } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red));
-      }
+      } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red)); }
     }
   }
 
+  // ✅ ADDED: SPLASH SCREEN ACTIONS
   Future<void> _restoreSplashScreen(int id) async {
-    try {
-      final response = await http.post(
-        Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id/restore'),
-        headers: await AdminApiService.getAuthHeader(),
-      );
-      if (response.statusCode == 200) { _loadData(); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Restored!'), backgroundColor: Colors.green)); }
-    } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
-    }
+    try { await AdminApiService.restoreSplashScreen(id); _loadData(); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Restored!'), backgroundColor: Colors.green)); } 
+    catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red)); }
   }
 
   Future<void> _permanentDeleteSplashScreen(int id) async {
     final confirm = await showPermanentDeleteConfirmation(context, 'Splash Screen ID $id');
     if (confirm) {
+      try { await AdminApiService.permanentDeleteSplashScreen(id); _loadData(); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permanently deleted'), backgroundColor: Colors.red)); } 
+      catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red)); }
+    }
+  }
+
+  Future<void> _bulkPermanentDeleteSplashScreens() async {
+    if (_selectedSplashScreenIds.isEmpty) return;
+    final confirm = await showPermanentDeleteConfirmation(context, '${_selectedSplashScreenIds.length} selected splash screens');
+    if (confirm == true) {
       try {
-        final response = await http.delete(
-          Uri.parse('${ApiConfig.baseUrl}/admin/splash-screen/$id'),
-          headers: await AdminApiService.getAuthHeader(),
-        );
-        if (response.statusCode == 200) { _loadData(); if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Permanently deleted'), backgroundColor: Colors.red)); }
-      } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red));
-      }
+        for (int id in _selectedSplashScreenIds) { await AdminApiService.permanentDeleteSplashScreen(id); }
+        setState(() { _selectedSplashScreenIds.clear(); });
+        _loadData();
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Selected splash screens deleted'), backgroundColor: Colors.red));
+      } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed: $e'), backgroundColor: Colors.red)); }
     }
   }
 
@@ -172,13 +138,13 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                     DropdownMenuItem(value: 'Winners', child: Text('Deleted Winners')),
                     DropdownMenuItem(value: 'Splash Screens', child: Text('Deleted Splash Screens')),
                   ],
-                  onChanged: (value) {
-                    if (value != null) { setState(() => _selectedType = value); _loadData(); }
-                  },
+                  onChanged: (value) { if (value != null) { setState(() => _selectedType = value); _loadData(); } },
                 ),
               ],
             ),
           ),
+          
+          // ✅ BULK ACTION BAR FOR COMPLAINTS
           if (_selectedType == 'Complaints' && _selectedComplaintIds.isNotEmpty)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -193,6 +159,23 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                 ],
               ),
             ),
+
+          // ✅ BULK ACTION BAR FOR SPLASH SCREENS
+          if (_selectedType == 'Splash Screens' && _selectedSplashScreenIds.isNotEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              color: Colors.red.withOpacity(0.2),
+              child: Row(
+                children: [
+                  Text('${_selectedSplashScreenIds.length} selected', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  const Spacer(),
+                  IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red, size: 28), tooltip: 'Delete Selected', onPressed: _bulkPermanentDeleteSplashScreens),
+                  const SizedBox(width: 8),
+                  IconButton(icon: const Icon(Icons.clear, color: Colors.white70, size: 28), tooltip: 'Clear Selection', onPressed: () { setState(() { _selectedSplashScreenIds.clear(); }); }),
+                ],
+              ),
+            ),
+
           Expanded(
             child: _isLoading ? const Center(child: CircularProgressIndicator()) : _buildList(),
           ),
@@ -213,10 +196,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
             child: Row(
               children: [
                 Checkbox(value: allSelected, tristate: true, onChanged: (bool? value) {
-                  setState(() {
-                    if (value == true) { _selectedComplaintIds.addAll(_deletedComplaints.map((c) => c['id'] as int)); } 
-                    else { _selectedComplaintIds.clear(); }
-                  });
+                  setState(() { if (value == true) { _selectedComplaintIds.addAll(_deletedComplaints.map((c) => c['id'] as int)); } else { _selectedComplaintIds.clear(); } });
                 }),
                 const Text('Select All', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ],
@@ -240,10 +220,7 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
                         Row(
                           children: [
                             Checkbox(value: _selectedComplaintIds.contains(complaint['id']), onChanged: (bool? value) {
-                              setState(() {
-                                if (value == true) { _selectedComplaintIds.add(complaint['id'] as int); } 
-                                else { _selectedComplaintIds.remove(complaint['id']); }
-                              });
+                              setState(() { if (value == true) { _selectedComplaintIds.add(complaint['id'] as int); } else { _selectedComplaintIds.remove(complaint['id']); } });
                             }),
                             const SizedBox(width: 8),
                             Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4), decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(20)), child: Text(complaint['status'] ?? 'OPEN', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold))),
@@ -275,29 +252,86 @@ class _RecycleBinScreenState extends State<RecycleBinScreen> {
     
     else if (_selectedType == 'Splash Screens') {
       if (_deletedSplashScreens.isEmpty) return const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [Icon(Icons.delete_sweep, size: 80, color: Colors.grey), SizedBox(height: 16), Text('No deleted splash screens', style: TextStyle(fontSize: 18, color: Colors.grey))]));
-      return ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _deletedSplashScreens.length,
-        itemBuilder: (context, index) {
-          final screen = _deletedSplashScreens[index];
-          final deletedAt = screen['deletedAt'] != null ? DateFormat('dd MMM yyyy HH:mm').format(DateTime.parse(screen['deletedAt'])) : 'Unknown';
-          return Card(
-            color: AdminTheme.surface,
-            margin: const EdgeInsets.only(bottom: 12),
-            child: ListTile(
-              leading: ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(screen['imageUrl'], width: 50, height: 80, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.broken_image))),
-              title: Text('ID: ${screen['id']}', style: const TextStyle(color: AdminTheme.textLight)),
-              subtitle: Text('Deleted: $deletedAt', style: TextStyle(color: Colors.red.shade300, fontSize: 12)),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(icon: const Icon(Icons.restore, color: Colors.green), onPressed: () => _restoreSplashScreen(screen['id'])),
-                  IconButton(icon: const Icon(Icons.delete_forever, color: Colors.red), onPressed: () => _permanentDeleteSplashScreen(screen['id'])),
-                ],
-              ),
+      final allSelected = _deletedSplashScreens.isNotEmpty && _selectedSplashScreenIds.length == _deletedSplashScreens.length;
+      
+      return Column(
+        children: [
+          // ✅ SELECT ALL BAR FOR SPLASH SCREENS
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: AdminTheme.surface.withOpacity(0.5),
+            child: Row(
+              children: [
+                Checkbox(
+                  value: allSelected, 
+                  tristate: true, 
+                  onChanged: (bool? value) {
+                    setState(() {
+                      if (value == true) { _selectedSplashScreenIds.addAll(_deletedSplashScreens.map((s) => s['id'] as int)); } 
+                      else { _selectedSplashScreenIds.clear(); }
+                    });
+                  }
+                ),
+                const Text('Select All', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              ],
             ),
-          );
-        },
+          ),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: _deletedSplashScreens.length,
+              itemBuilder: (context, index) {
+                final screen = _deletedSplashScreens[index];
+                final deletedAt = screen['deletedAt'] != null ? DateFormat('dd MMM yyyy HH:mm').format(DateTime.parse(screen['deletedAt'])) : 'Unknown';
+                return Card(
+                  color: AdminTheme.surface,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _selectedSplashScreenIds.contains(screen['id']),
+                              onChanged: (bool? value) {
+                                setState(() {
+                                  if (value == true) { _selectedSplashScreenIds.add(screen['id'] as int); } 
+                                  else { _selectedSplashScreenIds.remove(screen['id']); }
+                                });
+                              },
+                            ),
+                            const SizedBox(width: 8),
+                            ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.network(screen['imageUrl'], width: 50, height: 50, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.broken_image))),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('ID: ${screen['id']}', style: const TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.bold)),
+                                  Text('Deleted: $deletedAt', style: TextStyle(color: Colors.red.shade300, fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(child: ElevatedButton.icon(onPressed: () => _restoreSplashScreen(screen['id']), icon: const Icon(Icons.restore), label: const Text('RESTORE'), style: ElevatedButton.styleFrom(backgroundColor: Colors.green))),
+                            const SizedBox(width: 8),
+                            Expanded(child: ElevatedButton.icon(onPressed: () => _permanentDeleteSplashScreen(screen['id']), icon: const Icon(Icons.delete_forever), label: const Text('PERMANENTLY DELETE'), style: ElevatedButton.styleFrom(backgroundColor: Colors.red))),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       );
     } 
     
