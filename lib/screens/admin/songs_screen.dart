@@ -160,17 +160,6 @@ class _SongsScreenState extends State<SongsScreen> {
               Text('Upload Files (Optional)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
               const SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Upload to: ', style: TextStyle(color: AdminTheme.textLight)),
-                  const SizedBox(width: 8),
-                  ChoiceChip(label: const Text('Oracle'), selected: _selectedCloudProvider == 'oracle', onSelected: (s) => setState(() => _selectedCloudProvider = 'oracle')),
-                  const SizedBox(width: 8),
-                  ChoiceChip(label: const Text('Google'), selected: _selectedCloudProvider == 'google', onSelected: (s) => setState(() => _selectedCloudProvider = 'google')),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
                 children: [
                   Expanded(child: ElevatedButton.icon(onPressed: _pickAudioFile, icon: const Icon(Icons.audio_file), label: Text(_selectedAudioFile != null ? '✓ Audio' : 'Select Audio', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(140, 40)))),
                   const SizedBox(width: 8),
@@ -338,17 +327,6 @@ class _SongsScreenState extends State<SongsScreen> {
               Text('Upload Files (Optional)', style: GoogleFonts.poppins(fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
               const SizedBox(height: 12),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Upload to: ', style: TextStyle(color: AdminTheme.textLight)),
-                  const SizedBox(width: 8),
-                  ChoiceChip(label: const Text('Oracle'), selected: _selectedCloudProvider == 'oracle', onSelected: (s) => setState(() => _selectedCloudProvider = 'oracle')),
-                  const SizedBox(width: 8),
-                  ChoiceChip(label: const Text('Google'), selected: _selectedCloudProvider == 'google', onSelected: (s) => setState(() => _selectedCloudProvider = 'google')),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
                 children: [
                   Expanded(child: ElevatedButton.icon(onPressed: _pickAudioFile, icon: const Icon(Icons.audio_file), label: Text(_selectedAudioFile != null ? '✓ Audio' : 'Select Audio', overflow: TextOverflow.ellipsis), style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary, padding: const EdgeInsets.symmetric(vertical: 12), minimumSize: const Size(140, 40)))),
                   const SizedBox(width: 8),
@@ -393,6 +371,46 @@ class _SongsScreenState extends State<SongsScreen> {
             )
           : Column(
               children: [
+                // ✅ ADDED: Cloud Provider Toggle at the top (Uniform with Splash Screen)
+                Container(
+                  margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AdminTheme.surface,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AdminTheme.primary.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.cloud, color: AdminTheme.textLight, size: 18),
+                      const SizedBox(width: 8),
+                      const Text('Upload to: ', style: TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('Oracle Cloud'),
+                        selected: _selectedCloudProvider == 'oracle',
+                        onSelected: (selected) {
+                          if (selected) setState(() => _selectedCloudProvider = 'oracle');
+                        },
+                        backgroundColor: Colors.grey[800],
+                        selectedColor: Colors.blue[700],
+                        labelStyle: TextStyle(color: _selectedCloudProvider == 'oracle' ? Colors.white : Colors.grey[400]),
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('Google Cloud'),
+                        selected: _selectedCloudProvider == 'google',
+                        onSelected: (selected) {
+                          if (selected) setState(() => _selectedCloudProvider = 'google');
+                        },
+                        backgroundColor: Colors.grey[800],
+                        selectedColor: Colors.green[700],
+                        labelStyle: TextStyle(color: _selectedCloudProvider == 'google' ? Colors.white : Colors.grey[400]),
+                      ),
+                    ],
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.all(16),
                   child: TextField(
@@ -484,10 +502,20 @@ class _SongsScreenState extends State<SongsScreen> {
                                 },
                               ),
                               const SizedBox(width: 4),
-                              CircleAvatar(
-                                backgroundColor: isActive ? Colors.green : Colors.grey,
-                                backgroundImage: coverUrl != null && coverUrl.isNotEmpty ? NetworkImage(coverUrl) : null,
-                                child: coverUrl == null || coverUrl.isEmpty ? const Icon(Icons.music_note, color: Colors.white, size: 20) : null,
+                              // ✅ UPDATED: Square image container instead of CircleAvatar
+                              Container(
+                                width: 50,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: isActive ? Colors.green : Colors.grey,
+                                  borderRadius: BorderRadius.circular(8),
+                                  image: coverUrl != null && coverUrl.isNotEmpty
+                                      ? DecorationImage(image: NetworkImage(coverUrl), fit: BoxFit.cover)
+                                      : null,
+                                ),
+                                child: coverUrl == null || coverUrl.isEmpty
+                                    ? const Icon(Icons.music_note, color: Colors.white, size: 20)
+                                    : null,
                               ),
                             ],
                           ),
@@ -496,8 +524,8 @@ class _SongsScreenState extends State<SongsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(song['artist'] ?? 'Unknown', style: TextStyle(color: Colors.grey[400])),
-                              if (song['url'] != null && song['url'].toString().isNotEmpty) Text('🎵 Audio: Uploaded', style: TextStyle(color: Colors.green[400], fontSize: 11)),
-                              if (song['video'] != null && song['video'].toString().isNotEmpty) Text('🎬 Video: Uploaded', style: TextStyle(color: Colors.blue[400], fontSize: 11)),
+                              if (song['url'] != null && song['url'].toString().isNotEmpty) Text(' Audio: Uploaded', style: TextStyle(color: Colors.green[400], fontSize: 11)),
+                              if (song['video'] != null && song['video'].toString().isNotEmpty) Text(' Video: Uploaded', style: TextStyle(color: Colors.blue[400], fontSize: 11)),
                               if (coverUrl != null && coverUrl.isNotEmpty) Text('🖼️ Cover: Uploaded', style: TextStyle(color: Colors.purple[400], fontSize: 11)),
                             ],
                           ),
