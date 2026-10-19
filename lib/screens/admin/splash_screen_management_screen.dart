@@ -18,6 +18,9 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
   bool _isLoading = true;
   bool _isUploading = false;
   final TextEditingController _urlController = TextEditingController();
+  
+  // ✅ ADDED: State variable for cloud provider toggle
+  String _selectedCloudProvider = 'oracle';
 
   @override
   void initState() {
@@ -53,7 +56,10 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
       if (result != null) {
         setState(() => _isUploading = true);
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Uploading splash screen...'), duration: Duration(seconds: 2)));
-        final uploadResult = await AdminApiService.uploadSplashScreen(result);
+        
+        // ✅ ADDED: Pass selected cloud provider to API
+        final uploadResult = await AdminApiService.uploadSplashScreen(result, cloudProvider: _selectedCloudProvider);
+        
         await Future.delayed(const Duration(milliseconds: 500));
         setState(() {
           _currentActiveImageUrl = uploadResult['imageUrl'];
@@ -77,7 +83,10 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
     setState(() => _isUploading = true);
     try {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saving splash screen URL...'), duration: Duration(seconds: 1)));
-      final result = await AdminApiService.uploadSplashScreen(null, imageUrl: url);
+      
+      // ✅ ADDED: Pass selected cloud provider to API
+      final result = await AdminApiService.uploadSplashScreen(null, imageUrl: url, cloudProvider: _selectedCloudProvider);
+      
       await Future.delayed(const Duration(milliseconds: 500));
       setState(() {
         _currentActiveImageUrl = result['imageUrl'];
@@ -107,7 +116,6 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
     }
   }
 
-  // ✅ UPDATED: Soft Delete (Moves to Recycle Bin)
   Future<void> _deleteSplashScreen(int id) async {
     try {
       await AdminApiService.softDeleteSplashScreen(id);
@@ -172,6 +180,46 @@ class _SplashScreenManagementScreenState extends State<SplashScreenManagementScr
               children: [
                 Column(
                   children: [
+                    // ✅ ADDED: Cloud Provider Toggle UI
+                    Container(
+                      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AdminTheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AdminTheme.primary.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.cloud, color: AdminTheme.textLight, size: 18),
+                          const SizedBox(width: 8),
+                          const Text('Upload to: ', style: TextStyle(color: AdminTheme.textLight, fontWeight: FontWeight.bold)),
+                          const SizedBox(width: 8),
+                          ChoiceChip(
+                            label: const Text('Oracle Cloud'),
+                            selected: _selectedCloudProvider == 'oracle',
+                            onSelected: (selected) {
+                              if (selected) setState(() => _selectedCloudProvider = 'oracle');
+                            },
+                            backgroundColor: Colors.grey[800],
+                            selectedColor: Colors.blue[700],
+                            labelStyle: TextStyle(color: _selectedCloudProvider == 'oracle' ? Colors.white : Colors.grey[400]),
+                          ),
+                          const SizedBox(width: 8),
+                          ChoiceChip(
+                            label: const Text('Google Cloud'),
+                            selected: _selectedCloudProvider == 'google',
+                            onSelected: (selected) {
+                              if (selected) setState(() => _selectedCloudProvider = 'google');
+                            },
+                            backgroundColor: Colors.grey[800],
+                            selectedColor: Colors.green[700],
+                            labelStyle: TextStyle(color: _selectedCloudProvider == 'google' ? Colors.white : Colors.grey[400]),
+                          ),
+                        ],
+                      ),
+                    ),
                     Container(
                       padding: const EdgeInsets.all(16),
                       margin: const EdgeInsets.all(16),
