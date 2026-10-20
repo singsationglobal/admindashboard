@@ -53,7 +53,6 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
           return AlertDialog(
             backgroundColor: AdminTheme.surface,
             title: const Text('Reply to Complaint', style: TextStyle(color: AdminTheme.textLight)),
-            // ✅ FIXED: Wrapped in SingleChildScrollView so it works on phones when keyboard opens
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -78,19 +77,16 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                     onChanged: (value) => setDialogState(() => status = value!)
                   ),
                   const SizedBox(height: 16),
-                  // ✅ FIXED: Label is now outside the box to prevent overlapping
                   const Text('Admin Reply', style: TextStyle(color: Colors.white70, fontSize: 12)),
                   const SizedBox(height: 4),
                   TextField(
                     controller: replyController, 
-                    // ✅ FIXED: Text is explicitly black
                     style: const TextStyle(color: Colors.black, fontSize: 16),
                     maxLines: 5,
                     minLines: 3,
                     decoration: const InputDecoration(
                       hintText: 'Type your response here...', 
                       hintStyle: TextStyle(color: Colors.black54),
-                      // ✅ FIXED: White background for the box
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(),
@@ -236,8 +232,37 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
+                                  const Text('User Complaint:', style: TextStyle(fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
+                                  const SizedBox(height: 4),
                                   Text(complaint['message'] ?? '', style: const TextStyle(color: AdminTheme.textLight)),
                                   const SizedBox(height: 12),
+                                  
+                                  // ✅ ADDED: Display User Reply if it exists
+                                  if (complaint['userReply'] != null && complaint['userReply'].toString().isNotEmpty)
+                                    Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue.shade900.withOpacity(0.3),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: Colors.blue.shade400, width: 1),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text('User Reply:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
+                                          const SizedBox(height: 4),
+                                          Text(complaint['userReply'], style: const TextStyle(color: AdminTheme.textLight)),
+                                          if (complaint['updatedAt'] != null)
+                                            Text(
+                                              'Replied on: ${complaint['updatedAt']}',
+                                              style: TextStyle(color: Colors.grey[400], fontSize: 10),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  if (complaint['userReply'] != null && complaint['userReply'].toString().isNotEmpty)
+                                    const SizedBox(height: 12),
+                                  
                                   if (complaint['adminReply'] != null && complaint['adminReply'].isNotEmpty)
                                     Container(
                                       padding: const EdgeInsets.all(12),
