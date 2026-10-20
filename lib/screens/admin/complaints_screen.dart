@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../../core/admin_theme.dart';
 import '../../core/admin_api_service.dart';
 import 'dashboard_screen.dart';
@@ -43,7 +44,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
   }
 
   Future<void> _replyToComplaint(Map<String, dynamic> complaint) async {
-    final replyController = TextEditingController(text: complaint['adminReply'] ?? '');
+    final replyController = TextEditingController(text: '');
     String status = complaint['status'] ?? 'OPEN';
     
     final result = await showDialog<bool>(
@@ -77,7 +78,7 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                     onChanged: (value) => setDialogState(() => status = value!)
                   ),
                   const SizedBox(height: 16),
-                  const Text('Admin Reply', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  const Text('Your Reply', style: TextStyle(color: Colors.white70, fontSize: 12)),
                   const SizedBox(height: 4),
                   TextField(
                     controller: replyController, 
@@ -150,6 +151,68 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
     }
   }
 
+  // Parse conversation into individual messages for Chat UI
+  List<Map<String, dynamic>> _parseConversation(Map<String, dynamic> complaint) {
+    List<Map<String, dynamic>> messages = [];
+    
+    // Add original complaint
+    messages.add({
+      'sender': 'user',
+      'message': complaint['message'] ?? '',
+      'timestamp': complaint['createdAt'] ?? '',
+      'isOriginal': true,
+    });
+    
+    // Parse user replies
+    String? userReply = complaint['userReply'];
+    if (userReply != null && userReply.isNotEmpty) {
+      List<String> userBlocks = userReply.split('==============================');
+      for (var block in userBlocks) {
+        if (block.trim().isEmpty) continue;
+        RegExpMatch? match = RegExp(r'Your Reply \(([^)]+)\):\s*(.*)', dotAll: true).firstMatch(block);
+        if (match != null) {
+          messages.add({
+            'sender': 'user',
+            'message': match.group(2)!.trim(),
+            'timestamp': match.group(1)!.trim(),
+            'isOriginal': false,
+          });
+        }
+      }
+    }
+    
+    // Parse admin replies
+    String? adminReply = complaint['adminReply'];
+    if (adminReply != null && adminReply.isNotEmpty) {
+      List<String> adminBlocks = adminReply.split('==============================');
+      for (var block in adminBlocks) {
+        if (block.trim().isEmpty) continue;
+        RegExpMatch? match = RegExp(r'Admin Reply \(([^)]+)\):\s*(.*)', dotAll: true).firstMatch(block);
+        if (match != null) {
+          messages.add({
+            'sender': 'admin',
+            'message': match.group(2)!.trim(),
+            'timestamp': match.group(1)!.trim(),
+            'isOriginal': false,
+          });
+        }
+      }
+    }
+    
+    // Sort by timestamp
+    messages.sort((a, b) {
+      try {
+        DateTime timeA = DateFormat('dd MMM yyyy, HH:mm').parse(a['timestamp']);
+        DateTime timeB = DateFormat('dd MMM yyyy, HH:mm').parse(b['timestamp']);
+        return timeA.compareTo(timeB);
+      } catch (e) {
+        return 0;
+      }
+    });
+    
+    return messages;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -210,6 +273,8 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                     itemBuilder: (context, index) {
                       final complaint = _complaints[index];
                       final user = complaint['user'] ?? {};
+                      final messages = _parseConversation(complaint);
+                      
                       return Card(
                         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                         color: AdminTheme.surface,
@@ -227,76 +292,67 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
                             ],
                           ),
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text('User Complaint:', style: TextStyle(fontWeight: FontWeight.bold, color: AdminTheme.textLight)),
-                                  const SizedBox(height: 4),
-                                  Text(complaint['message'] ?? '', style: const TextStyle(color: AdminTheme.textLight)),
-                                  const SizedBox(height: 12),
-                                  
-                                  // ✅ ADDED: Display User Reply if it exists
-                                  if (complaint['userReply'] != null && complaint['userReply'].toString().isNotEmpty)
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(
-                                        color: Colors.blue.shade900.withOpacity(0.3),
-                                        borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: Colors.blue.shade400, width: 1),
-                                      ),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text('User Reply:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
-                                          const SizedBox(height: 4),
-                                          Text(complaint['userReply'], style: const TextStyle(color: AdminTheme.textLight)),
-                                          if (complaint['updatedAt'] != null)
-                                            Text(
-                                              'Replied on: ${complaint['updatedAt']}',
-                                              style: TextStyle(color: Colors.grey[400], fontSize: 10),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  if (complaint['userReply'] != null && complaint['userReply'].toString().isNotEmpty)
+                            Container(
+                              constraints: const BoxConstraints(maxHeight: 400),
+                              child: SingleChildScrollView(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // ✅ CHAT INTERFACE: Display messages like WhatsApp
+                                    ...messages.map((msg) {
+                                      bool isUser = msg['sender'] == 'user';
+                                      return Align(
+                                        alignment: isUser ? Alignment.centerLeft : Alignment.centerRight,
+                                        child: Container(
+                                          margin: const EdgeInsets.only(bottom: 12),
+                                          padding: const EdgeInsets.all(12),
+                                          constraints: const BoxConstraints(maxWidth: 300),
+                                          decoration: BoxDecoration(
+                                            color: isUser ? Colors.blue.shade800 : AdminTheme.primary,
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              if (msg['isOriginal'] == true)
+                                                const Text('Original Complaint', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.white70))
+                                              else
+                                                Text(isUser ? 'User' : 'Admin', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 10, color: Colors.white70)),
+                                              const SizedBox(height: 4),
+                                              Text(msg['message'], style: const TextStyle(color: Colors.white)),
+                                              const SizedBox(height: 4),
+                                              Text(msg['timestamp'], style: TextStyle(fontSize: 9, color: Colors.white.withOpacity(0.7))),
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                    
+                                    const SizedBox(height: 16),
+                                    const Divider(),
                                     const SizedBox(height: 12),
-                                  
-                                  if (complaint['adminReply'] != null && complaint['adminReply'].isNotEmpty)
-                                    Container(
-                                      padding: const EdgeInsets.all(12),
-                                      decoration: BoxDecoration(color: Colors.grey[800], borderRadius: BorderRadius.circular(8)),
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          const Text('Admin Response:', style: TextStyle(fontWeight: FontWeight.bold, color: AdminTheme.secondary)),
-                                          const SizedBox(height: 4),
-                                          Text(complaint['adminReply'], style: const TextStyle(color: AdminTheme.textLight)),
-                                        ],
-                                      ),
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            onPressed: () => _replyToComplaint(complaint), 
+                                            style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary), 
+                                            child: const Text('REPLY')
+                                          )
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: ElevatedButton(
+                                            onPressed: () => _deleteComplaint(complaint), 
+                                            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange), 
+                                            child: const Text('MOVE TO BIN')
+                                          )
+                                        ),
+                                      ],
                                     ),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () => _replyToComplaint(complaint), 
-                                          style: ElevatedButton.styleFrom(backgroundColor: AdminTheme.primary), 
-                                          child: const Text('REPLY')
-                                        )
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Expanded(
-                                        child: ElevatedButton(
-                                          onPressed: () => _deleteComplaint(complaint), 
-                                          style: ElevatedButton.styleFrom(backgroundColor: Colors.orange), 
-                                          child: const Text('MOVE TO BIN')
-                                        )
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
                             ),
                           ],
