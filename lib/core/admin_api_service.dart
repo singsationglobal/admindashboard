@@ -148,12 +148,9 @@ class AdminApiService {
     if (response.statusCode != 200) throw Exception('Failed to permanently delete song');
   }
 
-  // ✅ UPDATED: Added coverFile and cloudProvider parameters
   static Future<Map<String, dynamic>> uploadSongFiles(int songId, {XFile? audioFile, XFile? videoFile, XFile? coverFile, String cloudProvider = 'oracle'}) async {
     var request = http.MultipartRequest('POST', Uri.parse('${ApiConfig.baseUrl}/admin/songs/$songId/upload-files'));
     request.headers.addAll(await _authHeader());
-    
-    // ✅ ADDED: Send cloud provider choice to backend
     request.fields['cloudProvider'] = cloudProvider;
 
     if (audioFile != null) {
@@ -172,7 +169,6 @@ class AdminApiService {
         request.files.add(await http.MultipartFile.fromPath('videoFile', videoFile.path, contentType: MediaType('video', 'mp4')));
       }
     }
-    // ✅ ADDED: Cover Image Upload Logic
     if (coverFile != null) {
       if (kIsWeb) {
         final bytes = await coverFile.readAsBytes();
@@ -267,8 +263,13 @@ class AdminApiService {
     throw Exception('Failed to create staff');
   }
 
+  // ✅ FIXED: Now sends the X-Admin-Id header so the backend doesn't reject it
   static Future<void> deleteStaff(int staffId) async {
-    final response = await http.delete(Uri.parse('${ApiConfig.baseUrl}/admin/staff/$staffId'), headers: await _authHeader());
+    final headers = await _authHeader();
+    final adminData = await AdminLocalStorage.getAdmin();
+    headers['X-Admin-Id'] = adminData['id'].toString();
+    
+    final response = await http.delete(Uri.parse('${ApiConfig.baseUrl}/admin/staff/$staffId'), headers: headers);
     if (response.statusCode != 200) throw Exception('Failed to delete staff');
   }
 
