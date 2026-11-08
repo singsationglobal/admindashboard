@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 // Web-only import for the video element.
 import 'hero_video_web.dart' if (dart.library.io) 'hero_video_stub.dart';
 
-import 'widgets/public_scaffold.dart';
 import 'app_download_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -16,9 +15,10 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return PublicScaffold(
-      route: 'home',
-      child: Column(
+    // Replaced PublicScaffold with standard Scaffold to remove blue background and logo
+    return Scaffold(
+      backgroundColor: const Color(0xFF0D0D0D), // Forces dark background
+      body: Column(
         children: [
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.85,
@@ -87,7 +87,6 @@ class HomePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 40),
 
-                          // 1. BUTTON: Takes them to the Download App screen
                           ElevatedButton.icon(
                             onPressed: () {
                               Navigator.pushReplacement(
@@ -97,7 +96,7 @@ class HomePage extends StatelessWidget {
                             },
                             icon: const Icon(Icons.download, color: Colors.black, size: 20),
                             label: const Text(
-                              'Download App', // ✅ Changed from APK to App
+                              'Download App',
                               style: TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
@@ -117,7 +116,6 @@ class HomePage extends StatelessWidget {
                           
                           const SizedBox(height: 20),
 
-                          // 2. KEPT INTACT: The two "Coming Soon" store buttons
                           Wrap(
                             spacing: 20,
                             runSpacing: 20,
