@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'widgets/public_scaffold.dart';
 
 class AppDownloadPage extends StatelessWidget {
   const AppDownloadPage({super.key});
@@ -8,15 +7,15 @@ class AppDownloadPage extends StatelessWidget {
   static const String splashImageUrl =
       'https://storage.googleapis.com/singsationsadec/splashsadec/Singsation-Splash-2026.png';
 
-  // ✅ UPDATED: Points to the new file we just made public
-  static const String apkDownloadUrl =
+  static const String appDownloadUrl =
       'https://storage.googleapis.com/singsationsadec/apksadec/app-release.apk';
 
   @override
   Widget build(BuildContext context) {
-    return PublicScaffold(
-      route: 'download',
-      child: SingleChildScrollView(
+    // Replaced PublicScaffold with standard Scaffold to remove blue background and logo
+    return Scaffold(
+      backgroundColor: const Color(0xFF0D0D0D), // Forces dark background
+      body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
           child: Column(
@@ -42,7 +41,6 @@ class AppDownloadPage extends StatelessWidget {
               ),
               const SizedBox(height: 40),
 
-              // ─── PHONE MOCKUP WITH SPLASH IMAGE ───
               Container(
                 width: 220,
                 height: 400,
@@ -87,15 +85,14 @@ class AppDownloadPage extends StatelessWidget {
 
               const SizedBox(height: 28),
 
-              // ─── DOWNLOAD APP BUTTON ───
               ElevatedButton.icon(
                 onPressed: () => launchUrl(
-                  Uri.parse(apkDownloadUrl),
+                  Uri.parse(appDownloadUrl),
                   webOnlyWindowName: '_blank',
                 ),
                 icon: const Icon(Icons.download, color: Colors.black, size: 20),
                 label: const Text(
-                  'DOWNLOAD APP', // ✅ Changed from APK to APP
+                  'DOWNLOAD APP',
                   style: TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.bold,
@@ -118,7 +115,6 @@ class AppDownloadPage extends StatelessWidget {
 
               const SizedBox(height: 36),
 
-              // ─── STORE BUTTONS (Coming soon) ───
               Wrap(
                 spacing: 20,
                 runSpacing: 20,
@@ -137,7 +133,6 @@ class AppDownloadPage extends StatelessWidget {
 
               const SizedBox(height: 60),
 
-              // ─── WHY DOWNLOAD ───
               Container(
                 constraints: const BoxConstraints(maxWidth: 780),
                 child: const Column(
