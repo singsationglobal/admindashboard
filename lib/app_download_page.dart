@@ -8,21 +8,19 @@ class AppDownloadPage extends StatelessWidget {
   static const String splashImageUrl =
       'https://storage.googleapis.com/singsationsadec/splashsadec/Singsation-Splash-2026.png';
 
-  // ─── APK download URL (confirmed) ───
+  // ✅ UPDATED: Points to the new file we just made public
   static const String apkDownloadUrl =
-      'https://storage.googleapis.com/singsationsadec/apksadec/app-armeabi-v7a-release.apk';
+      'https://storage.googleapis.com/singsationsadec/apksadec/app-release.apk';
 
   @override
   Widget build(BuildContext context) {
     return PublicScaffold(
       route: 'download',
-      // FIX: SingleChildScrollView ensures the whole page scrolls safely on small phones without cutting off the bottom
       child: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
           child: Column(
             children: [
-              // FIX: FittedBox ensures the large title scales down safely on mobile without cutting off
               FittedBox(
                 fit: BoxFit.scaleDown,
                 child: const Text(
@@ -89,7 +87,7 @@ class AppDownloadPage extends StatelessWidget {
 
               const SizedBox(height: 28),
 
-              // ─── DOWNLOAD APK BUTTON ───
+              // ─── DOWNLOAD APP BUTTON ───
               ElevatedButton.icon(
                 onPressed: () => launchUrl(
                   Uri.parse(apkDownloadUrl),
@@ -97,7 +95,7 @@ class AppDownloadPage extends StatelessWidget {
                 ),
                 icon: const Icon(Icons.download, color: Colors.black, size: 20),
                 label: const Text(
-                  'DOWNLOAD APK',
+                  'DOWNLOAD APP', // ✅ Changed from APK to APP
                   style: TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.bold,
