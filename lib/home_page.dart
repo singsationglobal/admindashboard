@@ -5,7 +5,6 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'hero_video_web.dart' if (dart.library.io) 'hero_video_stub.dart';
 
 import 'widgets/public_scaffold.dart';
-// FIX 1: Import the download page so we can navigate to it directly
 import 'app_download_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -56,7 +55,6 @@ class HomePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           
-                          // PROTECTED: Will not cut off on mobile phones
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             child: const Text(
@@ -89,10 +87,9 @@ class HomePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 40),
 
-                          // 1. EXTRA BUTTON: Takes them to the Download App screen
+                          // 1. BUTTON: Takes them to the Download App screen
                           ElevatedButton.icon(
                             onPressed: () {
-                              // FIX 2: Uses the exact same safe navigation pattern as your PublicNavBar
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(builder: (_) => const AppDownloadPage()),
@@ -100,7 +97,7 @@ class HomePage extends StatelessWidget {
                             },
                             icon: const Icon(Icons.download, color: Colors.black, size: 20),
                             label: const Text(
-                              'Download APK',
+                              'Download App', // ✅ Changed from APK to App
                               style: TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
@@ -165,9 +162,6 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// STORE BUTTON — Kept exactly as it was
-// ─────────────────────────────────────────────────────────────────────────────
 class _ComingSoonStoreButton extends StatelessWidget {
   final IconData icon;
   final String label;
