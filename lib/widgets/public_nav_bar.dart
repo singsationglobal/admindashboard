@@ -10,7 +10,6 @@ class PublicNavBar extends StatelessWidget {
   final String currentRoute;
   const PublicNavBar({super.key, required this.currentRoute});
 
-  // ─── Logo URL (with ?v=2 to bypass stale CORS cache) ───
   static const String logoUrl =
       'https://storage.googleapis.com/singsationsadec/logossadec/Singsation-Logo-2026.png?v=2';
 
@@ -28,7 +27,8 @@ class PublicNavBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.3),
+        // ✅ FIX: Made background 0.9 opacity so it's visible over the hero video
+        color: Colors.black.withOpacity(0.9),
         border: Border(
           bottom: BorderSide(color: Colors.white.withOpacity(0.1)),
         ),
@@ -76,7 +76,6 @@ class PublicNavBar extends StatelessWidget {
               children: [
                 _navItem(context, 'HOME', const HomePage(), 'home'),
                 _navItem(context, 'ABOUT', const AboutPage(), 'about'),
-                // FIX 1: Changed 'DOWNLOAD' to 'DOWNLOAD APP' for desktop menu
                 _navItem(context, 'DOWNLOAD APP', const AppDownloadPage(), 'download'),
                 _navItem(context, 'CONTACT', const ContactPage(), 'contact'),
                 _navItem(context, 'FAQ', const FaqPage(), 'faq'),
@@ -116,7 +115,6 @@ class PublicNavBar extends StatelessWidget {
                 PopupMenuItem(
                     value: 'about',
                     child: Text('ABOUT', style: TextStyle(color: Colors.white))),
-                // FIX 2: Changed 'DOWNLOAD' to 'DOWNLOAD APP' for mobile popup menu
                 PopupMenuItem(
                     value: 'download',
                     child: Text('DOWNLOAD APP', style: TextStyle(color: Colors.white))),
