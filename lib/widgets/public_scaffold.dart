@@ -19,7 +19,7 @@ class PublicScaffold extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // FULL-SCREEN BACKGROUND IMAGE (placeholder until file swapped)
+          // FULL-SCREEN BACKGROUND IMAGE
           Positioned.fill(
             child: Image.asset(
               heroBg,
@@ -40,14 +40,12 @@ class PublicScaffold extends StatelessWidget {
             child: Container(color: Colors.black.withOpacity(0.55)),
           ),
           // CONTENT
-          SafeArea(
-            child: Column(
-              children: [
-                PublicNavBar(currentRoute: route),
-                Expanded(child: SingleChildScrollView(child: child)),
-                const PublicFooter(),
-              ],
-            ),
+          Column(
+            children: [
+              PublicNavBar(currentRoute: route),
+              Expanded(child: SingleChildScrollView(child: child)),
+              const PublicFooter(),
+            ],
           ),
         ],
       ),
