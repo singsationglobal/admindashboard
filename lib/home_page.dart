@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 // Web-only import for the video element.
 import 'hero_video_web.dart' if (dart.library.io) 'hero_video_stub.dart';
 
+import 'widgets/public_scaffold.dart';
+// FIX 1: Import the download page so we can navigate to it directly
 import 'app_download_page.dart';
 
 class HomePage extends StatelessWidget {
@@ -15,10 +17,9 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Replaced PublicScaffold with standard Scaffold to remove blue background and logo
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D0D0D), // Forces dark background
-      body: Column(
+    return PublicScaffold(
+      route: 'home',
+      child: Column(
         children: [
           SizedBox(
             height: MediaQuery.of(context).size.height * 0.85,
@@ -55,6 +56,7 @@ class HomePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
                           
+                          // PROTECTED: Will not cut off on mobile phones
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             child: const Text(
@@ -87,8 +89,10 @@ class HomePage extends StatelessWidget {
                           ),
                           const SizedBox(height: 40),
 
+                          // 1. EXTRA BUTTON: Takes them to the Download App screen
                           ElevatedButton.icon(
                             onPressed: () {
+                              // FIX 2: Uses the exact same safe navigation pattern as your PublicNavBar
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(builder: (_) => const AppDownloadPage()),
@@ -96,7 +100,7 @@ class HomePage extends StatelessWidget {
                             },
                             icon: const Icon(Icons.download, color: Colors.black, size: 20),
                             label: const Text(
-                              'Download App',
+                              'Download APK',
                               style: TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
@@ -116,6 +120,7 @@ class HomePage extends StatelessWidget {
                           
                           const SizedBox(height: 20),
 
+                          // 2. KEPT INTACT: The two "Coming Soon" store buttons
                           Wrap(
                             spacing: 20,
                             runSpacing: 20,
@@ -160,6 +165,9 @@ class HomePage extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// STORE BUTTON — Kept exactly as it was
+// ─────────────────────────────────────────────────────────────────────────────
 class _ComingSoonStoreButton extends StatelessWidget {
   final IconData icon;
   final String label;
