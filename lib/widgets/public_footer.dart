@@ -48,7 +48,7 @@ class PublicFooter extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ================== HIDDEN STAFF ENTRY ==================
-          // ✅ FIXED: Made the clickable area slightly larger so you can find it easily
+          // ✅ REVERTED: Just the plain, hidden dot. No icon.
           GestureDetector(
             onTap: () => showDialog(
               context: context,
@@ -56,14 +56,11 @@ class PublicFooter extends StatelessWidget {
               builder: (_) => const AdminLoginDialog(),
             ),
             child: Container(
-              width: 30, 
-              height: 30,
+              width: 14,
+              height: 14,
               decoration: BoxDecoration(
                 color: Colors.white.withOpacity(0.06),
                 shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Icon(Icons.lock_outline, color: Colors.white24, size: 14),
               ),
             ),
           ),
